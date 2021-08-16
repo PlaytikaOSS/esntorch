@@ -15,6 +15,7 @@ output units :math:`(\mathbf{W_{out}})`.
 
 .. image:: ./figures/esn.png
     :width: 30px
+    :scale: 50
     :alt: An echo state network (ESN).
     :align: center
 
