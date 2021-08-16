@@ -65,7 +65,7 @@ $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 $$
 \begin{align*}
-\mathcal{S} & = \(\{ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \)\}
+\mathcal{S} & = \{\{ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \}\}
 \end{align*}
 $$
 
