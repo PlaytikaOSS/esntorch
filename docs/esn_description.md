@@ -23,17 +23,17 @@ then given by the following equations:
 
 $$
 \begin{align*}
-\mathbf{\tilde{x}}(t+1) & = & f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right)
+\mathbf{\tilde{x}}(t+1) & = f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right)
 \end{align*}
 $$
 $$
 \begin{align*}
-\mathbf{x}(t+1)         & = & (1-\alpha) \mathbf{x}(t) + \alpha \mathbf{\tilde{x}}(t+1)
+\mathbf{x}(t+1)         & = (1-\alpha) \mathbf{x}(t) + \alpha \mathbf{\tilde{x}}(t+1)
 \end{align*}
 $$
 $$
 \begin{align*}
-\mathbf{y}(t+1)         & = & f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)
+\mathbf{y}(t+1)         & = f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)
 \end{align*}
 $$
 
@@ -63,7 +63,7 @@ $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 $$
 \begin{align*}
-\mathcal{S} & = & \left\{ \left( \mathbf{u}(t), \mathbf{y^{target}}(t) \right) : t = 1, \dots, T \right\}.
+\mathcal{S} & = \left\{ \left( \mathbf{u}(t), \mathbf{y^{target}}(t) \right) : t = 1, \dots, T \right\}.
 \end{align*}
 $$
 
