@@ -11,8 +11,8 @@ reservoir $(\mathbf{W_{in}})$, which is itself recurrently connected
 $(\mathbf{W_{res}})$, and projects onto the output units
 $(\mathbf{W_{out}})$.
 
-![An echo state network (ESN).](./figures/esn.png){.align-center
-width="500px"}
+![An echo state network (ESN).](./figures/esn.png)
+<img src="./figures/esn.png" width="48">
 
 Here, we consider *Leaky Integrator ESNs*. The inputs, reservoir state
 and outputs of the network at time $t > 0$ are denoted by
@@ -53,7 +53,7 @@ training process can be described as follows. Consider some training set
 $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 \begin{eqnarray*}
-\mathcal{S} = \Big\{ \big( \mathbf{u}(t), \mathbf{y^{target}}(t) \big) : t = 1, \dots, T \Big\}.
+\mathcal{S} & = & \left\{ \left( \mathbf{u}(t), \mathbf{y^{target}}(t) \right) : t = 1, \dots, T \right\}.
 \end{eqnarray*}
 
 Let $\mathbf{x}(1), \dots ,\mathbf{x}(T)$ and
@@ -85,5 +85,4 @@ Our training paradigm consist of the four following steps:
 
 The training process is illustrated in the figure below.
 
-![Customized training paradigm of an echo state network.](./figures/training.png){.align-center
-width="500px"}
+![Customized training paradigm of an echo state network.](./figures/training.png)
