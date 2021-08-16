@@ -12,7 +12,7 @@ $(\mathbf{W_{res}})$, and projects onto the output units
 $(\mathbf{W_{out}})$.
 
 ![An echo state network (ESN).](./figures/esn.png){.align-center
-width="1500px"}
+width="500px"}
 
 Here, we consider *Leaky Integrator ESNs*. The inputs, reservoir state
 and outputs of the network at time $t > 0$ are denoted by
@@ -22,11 +22,11 @@ $\mathbf{y}(t) \in \mathbb{R}^{N_y}$, respectively. The state
 $\mathbf{x}(0)$ is the *initial state*. The dynamics of the network is
 then given by the following equations:
 
-$$\begin{aligned}
-\mathbf{\tilde{x}}(t+1) & = f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right) \\
-\mathbf{x}(t+1)         & = (1-\alpha) \mathbf{x}(t) + \alpha \mathbf{\tilde{x}}(t+1) \\
-\mathbf{y}(t+1)         & = f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)
-\end{aligned}$$
+\begin{eqnarray*}
+\mathbf{\tilde{x}}(t+1) & = & f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right) \\
+\mathbf{x}(t+1)         & = & (1-\alpha) \mathbf{x}(t) + \alpha \mathbf{\tilde{x}}(t+1) \\
+\mathbf{y}(t+1)         & = & f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)
+\end{eqnarray*}
 
 where $[\mathbf{a}, \mathbf{b}]$ denotes the concatenation of
 $\mathbf{a}$ and $\mathbf{b}$, $\mathbf{x}(0)$ is the *initial state*,
@@ -52,7 +52,9 @@ In an ESN, only the output weights $\mathbf{W_{out}}$ are trained. The
 training process can be described as follows. Consider some training set
 $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
-$$\mathcal{S} = \Big\{ \big( \mathbf{u}(t), \mathbf{y^{target}}(t) \big) : t = 1, \dots, T \Big\}.$$
+\begin{eqnarray*}
+\mathcal{S} = \Big\{ \big( \mathbf{u}(t), \mathbf{y^{target}}(t) \big) : t = 1, \dots, T \Big\}.
+\end{eqnarray*}
 
 Let $\mathbf{x}(1), \dots ,\mathbf{x}(T)$ and
 $\mathbf{y}(1), \dots ,\mathbf{y}(T)$ be the successive reservoir states
