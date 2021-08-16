@@ -1,6 +1,6 @@
----
-title: Echo State Networks for Text Classification
----
+-------------------------------------------
+Echo State Networks for Text Classification
+-------------------------------------------
 
 # Model
 
@@ -12,6 +12,8 @@ $(\mathbf{W_{res}})$, and projects onto the output units
 $(\mathbf{W_{out}})$.
 
 <img src="./figures/esn.png" scale="50">
+
+![An echo state network.](./figures/esn.png)
 
 Here, we consider *Leaky Integrator ESNs*. The inputs, reservoir state
 and outputs of the network at time $t > 0$ are denoted by
@@ -63,7 +65,7 @@ $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 $$
 \begin{align*}
-\mathcal{S} & = \left\{ \left( \mathbf{u}(t), \mathbf{y^{target}}(t) \right) : t = 1, \dots, T \right\}.
+\mathcal{S} & = \left\{ \left( \mathbf{u}(t), \mathbf{y^{target}}(t) \right) \mid t = 1, \dots, T \right\}.
 \end{align*}
 $$
 
