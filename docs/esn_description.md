@@ -62,7 +62,7 @@ training process can be described as follows. Consider some training set
 $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 $
-\mathcal{S} = \{ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \}
+\mathcal{S} = \text{{} ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \text{}}
 $
 
 Let $\mathbf{x}(1), \dots ,\mathbf{x}(T)$ and
