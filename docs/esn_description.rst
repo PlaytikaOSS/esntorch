@@ -14,7 +14,7 @@ recurrently connected :math:`(\mathbf{W_{res}})`, and projects onto the
 output units :math:`(\mathbf{W_{out}})`.
 
 .. image:: ./figures/esn.png
-    :width: 300px
+    :width: 30px
     :alt: An echo state network (ESN).
     :align: center
 
