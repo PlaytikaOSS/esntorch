@@ -61,9 +61,9 @@ In an ESN, only the output weights $\mathbf{W_{out}}$ are trained. The
 training process can be described as follows. Consider some training set
 $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
-$
+$$
 \mathcal{S} = \[ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \]
-$
+$$
 
 Let $\mathbf{x}(1), \dots ,\mathbf{x}(T)$ and
 $\mathbf{y}(1), \dots ,\mathbf{y}(T)$ be the successive reservoir states
