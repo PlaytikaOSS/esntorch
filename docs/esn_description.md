@@ -35,7 +35,7 @@ $$
 $$
 $$
 \begin{align*}
-\mathbf{y}(t+1)         & = f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)
+\mathbf{y}(t+1)         & = f_{out} \left( \mathbf{W_{out}} \[ \mathbf{1}, \mathbf{x}(t+1) \] \right)
 \end{align*}
 $$
 
@@ -65,7 +65,7 @@ $\mathcal{S}$ composed of temporal inputs and associated targets, i.e.,
 
 $$
 \begin{align*}
-\mathcal{S} & = \{\{ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \}\}
+\mathcal{S} & = \{ ( \mathbf{u}(t), \mathbf{y^{target}}(t) ) \mid t = 1, \dots, T \}
 \end{align*}
 $$
 
