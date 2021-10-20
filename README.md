@@ -22,13 +22,13 @@ $ pip install esntorch
 
 The command above will automatically install all the dependencies listed in ``requirements.txt``. 
 
-Please visit the [installation page](./docs/installation.rst) for more details.
+Please visit the [installation page](docs/src/installation.rst) for more details.
 
 
 
 Documentation
 -------------
-For more information, please read the full [documentation.](./docs/index.rst)
+For more information, please read the full [documentation.](docs/src/index.rst)
 
 
 

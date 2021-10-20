@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial &mdash; esntorch 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Architecture" href="api.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> esntorch
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="esn_description.html">Echo State Networks for Text Classification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#librairies">Librairies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device-and-seed">Device and Seed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#load-and-tokenize-data">Load and Tokenize Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model">Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training">Training</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Architecture</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">esntorch</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/tutorial.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="tutorial">
+<span id="id1"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline"></a></h1>
+<p>This notebook provides a use case example of the <code class="docutils literal notranslate"><span class="pre">EsnTorch</span></code> library.
+It described the implementation of an Echo State Network (ESN) for text
+classification on the TREC-6 dataset.</p>
+<p>The instantiation, training and evaluation of an ESN for text
+classification is achieved via the following steps:
+#. Import the required modules
+#. Create the dataloaders
+#. Instantiate the ESN by specifying:
+* a reservoir
+* a loss function
+* a learning algorithm
+#. Train the ESN
+#. Results</p>
+<section id="librairies">
+<h2>Librairies<a class="headerlink" href="#librairies" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="ch">#!pip install datasets==1.7.0</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">))</span>
+<span class="c1"># sys.path.insert(0, os.path.abspath(&quot;../..&quot;))</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># import numpy as np</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">classification_report</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">datasets</span> <span class="kn">import</span> <span class="n">load_dataset</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">concatenate_datasets</span>
+
+<span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">AutoTokenizer</span>
+<span class="kn">from</span> <span class="nn">transformers.data.data_collator</span> <span class="kn">import</span> <span class="n">DataCollatorWithPadding</span>
+
+<span class="kn">import</span> <span class="nn">esntorch.core.reservoir</span> <span class="k">as</span> <span class="nn">res</span>
+<span class="kn">import</span> <span class="nn">esntorch.core.learning_algo</span> <span class="k">as</span> <span class="nn">la</span>
+<span class="kn">import</span> <span class="nn">esntorch.core.merging_strategy</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="kn">import</span> <span class="nn">esntorch.core.esn</span> <span class="k">as</span> <span class="nn">esn</span>
+</pre></div>
+</div>
+</section>
+<section id="device-and-seed">
+<h2>Device and Seed<a class="headerlink" href="#device-and-seed" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<span class="n">device</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">device</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="load-and-tokenize-data">
+<h2>Load and Tokenize Data<a class="headerlink" href="#load-and-tokenize-data" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Custom functions for loading and preparing data</span>
+
+<span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">sample</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tokenize sample: variable &#39;tokenizer&#39; contains the &quot;&quot;&quot;</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span> <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sample</span>
+
+<span class="k">def</span> <span class="nf">add_lengths</span><span class="p">(</span><span class="n">sample</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add &#39;lengths&#39; field to sort batch by length&quot;&quot;&quot;</span>
+    <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;lengths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sample</span>
+
+<span class="k">def</span> <span class="nf">load_and_prepare_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">cache_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load dataset from the datasets library of HuggingFace.</span>
+<span class="sd">    Tokenize and add length.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Load dataset</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">,</span> <span class="n">cache_dir</span><span class="o">=</span><span class="n">CACHE_DIR</span><span class="p">)</span>
+
+    <span class="c1"># Rename label column (use &#39;label-fine&#39; for fine-grained labels)</span>
+    <span class="c1"># Used for tokenization purposes.</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">rename_column</span><span class="p">(</span><span class="s1">&#39;label-coarse&#39;</span><span class="p">,</span> <span class="s1">&#39;labels&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Tokenize data</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">tokenize</span><span class="p">,</span> <span class="n">batched</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dataset</span><span class="o">.</span><span class="n">set_format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;torch&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input_ids&#39;</span><span class="p">,</span> <span class="s1">&#39;attention_mask&#39;</span><span class="p">,</span> <span class="s1">&#39;labels&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Add &#39;lengths&#39; feature</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">add_lengths</span><span class="p">,</span> <span class="n">batched</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dataset</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load BERT tokenizer</span>
+<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s1">&#39;bert-base-uncased&#39;</span><span class="p">)</span>
+
+<span class="c1"># Load and prepare data</span>
+<span class="n">CACHE_DIR</span> <span class="o">=</span> <span class="s1">&#39;cache_dir/&#39;</span> <span class="c1"># put your path here</span>
+
+<span class="n">full_dataset</span> <span class="o">=</span> <span class="n">load_and_prepare_dataset</span><span class="p">(</span><span class="s1">&#39;trec&#39;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_dir</span><span class="o">=</span><span class="n">CACHE_DIR</span><span class="p">)</span>
+<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">full_dataset</span><span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s2">&quot;lengths&quot;</span><span class="p">)</span>
+<span class="n">test_dataset</span> <span class="o">=</span> <span class="n">full_dataset</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s2">&quot;lengths&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create dict of all datasets</span>
+<span class="n">dataset_d</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="n">train_dataset</span><span class="p">,</span>
+    <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="n">test_dataset</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Using</span> <span class="n">custom</span> <span class="n">data</span> <span class="n">configuration</span> <span class="n">default</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Downloading</span> <span class="ow">and</span> <span class="n">preparing</span> <span class="n">dataset</span> <span class="n">trec</span><span class="o">/</span><span class="n">default</span> <span class="p">(</span><span class="n">download</span><span class="p">:</span> <span class="mf">350.79</span> <span class="n">KiB</span><span class="p">,</span> <span class="n">generated</span><span class="p">:</span> <span class="mf">403.39</span> <span class="n">KiB</span><span class="p">,</span> <span class="n">post</span><span class="o">-</span><span class="n">processed</span><span class="p">:</span> <span class="n">Unknown</span> <span class="n">size</span><span class="p">,</span> <span class="n">total</span><span class="p">:</span> <span class="mf">754.18</span> <span class="n">KiB</span><span class="p">)</span> <span class="n">to</span> <span class="n">cache_dir</span><span class="o">/</span><span class="n">trec</span><span class="o">/</span><span class="n">default</span><span class="o">/</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">751</span><span class="n">da1ab101b8d297a3d6e9c79ee9b0173ff94c4497b75677b59b61d5467a9b9</span><span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Downloading:   0%|          | 0.00/336k [00:00&lt;?, ?B/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Downloading:   0%|          | 0.00/23.4k [00:00&lt;?, ?B/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0 examples [00:00, ? examples/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0 examples [00:00, ? examples/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Dataset</span> <span class="n">trec</span> <span class="n">downloaded</span> <span class="ow">and</span> <span class="n">prepared</span> <span class="n">to</span> <span class="n">cache_dir</span><span class="o">/</span><span class="n">trec</span><span class="o">/</span><span class="n">default</span><span class="o">/</span><span class="mf">1.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">751</span><span class="n">da1ab101b8d297a3d6e9c79ee9b0173ff94c4497b75677b59b61d5467a9b9</span><span class="o">.</span> <span class="n">Subsequent</span> <span class="n">calls</span> <span class="n">will</span> <span class="n">reuse</span> <span class="n">this</span> <span class="n">data</span><span class="o">.</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0%|          | 0/6 [00:00&lt;?, ?ba/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0%|          | 0/1 [00:00&lt;?, ?ba/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0%|          | 0/5452 [00:00&lt;?, ?ex/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>0%|          | 0/500 [00:00&lt;?, ?ex/s]
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_d</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">({</span>
+     <span class="n">features</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;attention_mask&#39;</span><span class="p">,</span> <span class="s1">&#39;input_ids&#39;</span><span class="p">,</span> <span class="s1">&#39;label-fine&#39;</span><span class="p">,</span> <span class="s1">&#39;labels&#39;</span><span class="p">,</span> <span class="s1">&#39;lengths&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;token_type_ids&#39;</span><span class="p">],</span>
+     <span class="n">num_rows</span><span class="p">:</span> <span class="mi">5452</span>
+ <span class="p">}),</span>
+ <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">({</span>
+     <span class="n">features</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;attention_mask&#39;</span><span class="p">,</span> <span class="s1">&#39;input_ids&#39;</span><span class="p">,</span> <span class="s1">&#39;label-fine&#39;</span><span class="p">,</span> <span class="s1">&#39;labels&#39;</span><span class="p">,</span> <span class="s1">&#39;lengths&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;token_type_ids&#39;</span><span class="p">],</span>
+     <span class="n">num_rows</span><span class="p">:</span> <span class="mi">500</span>
+ <span class="p">})}</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create dict of dataloaders</span>
+
+<span class="n">dataloader_d</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dataset_d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">dataloader_d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">collate_fn</span><span class="o">=</span><span class="n">DataCollatorWithPadding</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataloader_d</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;train&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dataloader</span><span class="o">.</span><span class="n">DataLoader</span> <span class="n">at</span> <span class="mh">0x7f7f799db090</span><span class="o">&gt;</span><span class="p">,</span>
+ <span class="s1">&#39;test&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dataloader</span><span class="o">.</span><span class="n">DataLoader</span> <span class="n">at</span> <span class="mh">0x7f7f99333ad0</span><span class="o">&gt;</span><span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="model">
+<h2>Model<a class="headerlink" href="#model" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># ESN parameters</span>
+<span class="n">esn_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;embedding_weights&#39;</span><span class="p">:</span> <span class="s1">&#39;bert-base-uncased&#39;</span><span class="p">,</span> <span class="c1"># TEXT.vocab.vectors,</span>
+            <span class="s1">&#39;distribution&#39;</span> <span class="p">:</span> <span class="s1">&#39;uniform&#39;</span><span class="p">,</span>               <span class="c1"># uniform, gaussian</span>
+            <span class="s1">&#39;input_dim&#39;</span> <span class="p">:</span> <span class="mi">768</span><span class="p">,</span>                        <span class="c1"># dim of BERT encoding!</span>
+            <span class="s1">&#39;reservoir_dim&#39;</span> <span class="p">:</span> <span class="mi">500</span><span class="p">,</span>
+            <span class="s1">&#39;bias_scaling&#39;</span> <span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s1">&#39;sparsity&#39;</span> <span class="p">:</span> <span class="mf">0.99</span><span class="p">,</span>
+            <span class="s1">&#39;spectral_radius&#39;</span> <span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+            <span class="s1">&#39;leaking_rate&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s1">&#39;activation_function&#39;</span> <span class="p">:</span> <span class="s1">&#39;tanh&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;input_scaling&#39;</span> <span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s1">&#39;mean&#39;</span> <span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s1">&#39;std&#39;</span> <span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="c1">#&#39;learning_algo&#39; : None, # initialzed below</span>
+            <span class="c1">#&#39;criterion&#39; : None,     # initialzed below</span>
+            <span class="c1">#&#39;optimizer&#39; : None,     # initialzed below</span>
+            <span class="s1">&#39;merging_strategy&#39;</span> <span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;bidirectional&#39;</span> <span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="c1"># True</span>
+            <span class="s1">&#39;device&#39;</span> <span class="p">:</span> <span class="n">device</span><span class="p">,</span>
+            <span class="s1">&#39;seed&#39;</span> <span class="p">:</span> <span class="mi">42</span>
+             <span class="p">}</span>
+
+<span class="c1"># Instantiate the ESN</span>
+<span class="n">ESN</span> <span class="o">=</span> <span class="n">esn</span><span class="o">.</span><span class="n">EchoStateNetwork</span><span class="p">(</span><span class="o">**</span><span class="n">esn_params</span><span class="p">)</span>
+
+<span class="c1"># Define the learning algo of the ESN</span>
+<span class="n">ESN</span><span class="o">.</span><span class="n">learning_algo</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">RidgeRegression</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># Put the ESN on the device (CPU or GPU)</span>
+<span class="n">ESN</span> <span class="o">=</span> <span class="n">ESN</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Warm up the ESN on 3 sentences</span>
+<span class="n">nb_sentences</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_sentences</span><span class="p">):</span>
+    <span class="n">sentence</span> <span class="o">=</span> <span class="n">dataset_d</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">dataloader_tmp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">sentence</span><span class="p">,</span>
+                                                 <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                 <span class="n">collate_fn</span><span class="o">=</span><span class="n">DataCollatorWithPadding</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">dataloader_tmp</span><span class="p">:</span>
+        <span class="n">ESN</span><span class="o">.</span><span class="n">warm_up</span><span class="p">(</span><span class="n">sentence</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="training">
+<h2>Training<a class="headerlink" href="#training" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># training the ESN</span>
+<span class="n">ESN</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataloader_d</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this headline"></a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train predictions and accuracy</span>
+<span class="n">train_pred</span><span class="p">,</span> <span class="n">train_acc</span> <span class="o">=</span> <span class="n">ESN</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dataloader_d</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">train_acc</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">86.86720275878906</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test predictions and accuracy</span>
+<span class="n">test_pred</span><span class="p">,</span> <span class="n">test_acc</span> <span class="o">=</span> <span class="n">ESN</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dataloader_d</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">test_acc</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">87.80000305175781</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test classification report</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">classification_report</span><span class="p">(</span><span class="n">test_pred</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">dataset_d</span><span class="p">[</span><span class="s1">&#39;test&#39;</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>              <span class="n">precision</span>    <span class="n">recall</span>  <span class="n">f1</span><span class="o">-</span><span class="n">score</span>   <span class="n">support</span>
+
+           <span class="mi">0</span>       <span class="mf">0.94</span>      <span class="mf">0.88</span>      <span class="mf">0.91</span>       <span class="mi">148</span>
+           <span class="mi">1</span>       <span class="mf">0.65</span>      <span class="mf">0.86</span>      <span class="mf">0.74</span>        <span class="mi">71</span>
+           <span class="mi">2</span>       <span class="mf">0.56</span>      <span class="mf">1.00</span>      <span class="mf">0.71</span>         <span class="mi">5</span>
+           <span class="mi">3</span>       <span class="mf">0.95</span>      <span class="mf">0.89</span>      <span class="mf">0.92</span>        <span class="mi">70</span>
+           <span class="mi">4</span>       <span class="mf">0.95</span>      <span class="mf">0.90</span>      <span class="mf">0.92</span>       <span class="mi">119</span>
+           <span class="mi">5</span>       <span class="mf">0.91</span>      <span class="mf">0.85</span>      <span class="mf">0.88</span>        <span class="mi">87</span>
+
+    <span class="n">accuracy</span>                           <span class="mf">0.88</span>       <span class="mi">500</span>
+   <span class="n">macro</span> <span class="n">avg</span>       <span class="mf">0.83</span>      <span class="mf">0.90</span>      <span class="mf">0.85</span>       <span class="mi">500</span>
+<span class="n">weighted</span> <span class="n">avg</span>       <span class="mf">0.89</span>      <span class="mf">0.88</span>      <span class="mf">0.88</span>       <span class="mi">500</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Playtika Ltd..</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

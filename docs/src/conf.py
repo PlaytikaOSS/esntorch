@@ -12,7 +12,8 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath('../../'))
 # sys.path.append(os.path.join(os.pardir, os.pardir))
 # sys.path.insert(0, os.path.abspath('esntorch'))
 # print(os.sys.path)
@@ -42,6 +43,7 @@ extensions = [
 	# 'sphinx.ext.mathjax',
 	'sphinx.ext.imgmath',
 	'nbsphinx',
+	'recommonmark'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

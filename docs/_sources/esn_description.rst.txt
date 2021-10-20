@@ -14,10 +14,10 @@ recurrently connected :math:`(\mathbf{W_{res}})`, and projects onto the
 output units :math:`(\mathbf{W_{out}})`.
 
 .. image:: ./figures/esn.png
-    :width: 30px
-    :scale: 50
+    :width: 300px
     :alt: An echo state network (ESN).
     :align: center
+
 
 Here, we consider *Leaky Integrator ESNs*. The inputs, reservoir state
 and outputs of the network at time :math:`t > 0` are denoted by
