@@ -36,7 +36,7 @@ You can install the library and the dependencies with one of the following comma
     $ pip install .                        # install library + dependencies
     $ pip install -r requirements.txt      # install dependencies
 
-To create the python wheel file ``pyabtest.whl`` for installation with ``pip``
+To create the python wheel file ``esntorch.whl`` for installation with ``pip``
 run the following command:
 
 .. code::

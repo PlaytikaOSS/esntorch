@@ -28,7 +28,7 @@ Please visit the [installation page](docs/src/installation.rst) for more details
 
 Documentation
 -------------
-For more information, please read the full [documentation.](docs/src/index.rst)
+For more information, please read the full [documentation.](https://playtikaresearch.github.io/esntorch/index.html)
 
 
 
