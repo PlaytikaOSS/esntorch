@@ -8,9 +8,8 @@ Installation
 Installation
 ------------
 
-This library is distributed on `PyPi <https://pypi.org/>`_ and
-can be installed with ``pip``. The latest release is version ``0.0.2``.
-(DEPLOY TO PYPI AND UPDATE LINK ONCE AUTHORIZATION OBTAINED)
+This library is distributed on `PyPi <https://pypi.org/project/esntorch/>`_ and
+can be installed with ``pip`` using the command below. The latest release is version ``0.0.2``.
 
 .. code::
 

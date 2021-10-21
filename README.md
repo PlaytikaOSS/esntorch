@@ -12,7 +12,7 @@ This library works for Python 3.6 and higher and PyTorch 1.7.1 and higher.
 Installation
 ------------
 
-This library is distributed on [PyPi](https://pypi.org/) and
+This library is distributed on [PyPi](https://pypi.org/project/esntorch/) and
 can be installed with ``pip``. The latest release is version ``0.0.2``.
 (DEPLOY TO PYPI AND UPDATE LINK ONCE AUTHORIZATION OBTAINED)
 
