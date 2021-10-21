@@ -14,7 +14,6 @@ Installation
 
 This library is distributed on [PyPi](https://pypi.org/project/esntorch/) and
 can be installed with ``pip``. The latest release is version ``0.0.2``.
-(DEPLOY TO PYPI AND UPDATE LINK ONCE AUTHORIZATION OBTAINED)
 
 ~~~~~~~~~~~~~~~~~~~~~~
 $ pip install esntorch 
