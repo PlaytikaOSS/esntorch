@@ -10,15 +10,15 @@ with open("README.md", "r") as fh:
 
 
 setuptools.setup(
-    name="EsnTorch",
-    version=__version__,
+    name="esntorch",
+    version=0.0.2,
     description="Python library: Echo state Networks for NLP",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
     author="Playtika Ltd.",
     author_email="",
-    license="",
+    license="MIT License",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
