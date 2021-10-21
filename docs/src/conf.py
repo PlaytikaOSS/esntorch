@@ -41,7 +41,7 @@ extensions = [
 	'sphinx.ext.napoleon',
 	'sphinx.ext.todo',
 	# 'sphinx.ext.mathjax',
-	'sphinx.ext.imgmath',
+	# 'sphinx.ext.imgmath',
 	'nbsphinx',
 	'recommonmark'
 ]

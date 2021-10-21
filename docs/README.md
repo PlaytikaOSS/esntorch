@@ -2,8 +2,8 @@ To generate doc automatically via Sphynx:
 
 :code::
 
-    $ cd docs
-    $ sphinx-apidoc -o source/ ../esntorch
+    $ cd docs/src/
+    $ sphinx-apidoc -o source/ ../../esntorch
     $ make clean
     $ make html
 

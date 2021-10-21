@@ -16,6 +16,8 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -102,58 +104,58 @@
 <section id="model">
 <h2>Model<a class="headerlink" href="#model" title="Permalink to this headline"></a></h2>
 <p>An <em>echo state network (ESN)</em> is a recurrent neural network composed of
-<img class="math" src="_images/math/23e53715f6badf590e944beac2cf131bd1304d8c.png" alt="N_u"/> input units, <img class="math" src="_images/math/8e86567060911fbdc4be435356019be79adef676.png" alt="N_x"/> hidden units composing the
-so-called <em>reservoir</em>, and <img class="math" src="_images/math/d16e73ef2d74cc024256806b538d08f52e0e7334.png" alt="N_y"/> output units. The input units
-project onto the reservoir <img class="math" src="_images/math/25f6713f3067fb7b860aa72e867a82b3210d410e.png" alt="(\mathbf{W_{in}})"/>, which is itself
-recurrently connected <img class="math" src="_images/math/3536b03fd0404ed6b933c55e01912bc83aa31ab8.png" alt="(\mathbf{W_{res}})"/>, and projects onto the
-output units <img class="math" src="_images/math/9c72c2fffcf45fb32c349c10a91b9924520daefa.png" alt="(\mathbf{W_{out}})"/>.</p>
+<span class="math notranslate nohighlight">\(N_u\)</span> input units, <span class="math notranslate nohighlight">\(N_x\)</span> hidden units composing the
+so-called <em>reservoir</em>, and <span class="math notranslate nohighlight">\(N_y\)</span> output units. The input units
+project onto the reservoir <span class="math notranslate nohighlight">\((\mathbf{W_{in}})\)</span>, which is itself
+recurrently connected <span class="math notranslate nohighlight">\((\mathbf{W_{res}})\)</span>, and projects onto the
+output units <span class="math notranslate nohighlight">\((\mathbf{W_{out}})\)</span>.</p>
 <a class="reference internal image-reference" href="_images/esn.png"><img alt="An echo state network (ESN)." class="align-center" src="_images/esn.png" style="width: 300px;" /></a>
 <p>Here, we consider <em>Leaky Integrator ESNs</em>. The inputs, reservoir state
-and outputs of the network at time <img class="math" src="_images/math/8cd39c71c2f33de29e19cc5121a404db27b62388.png" alt="t &gt; 0"/> are denoted by
-<img class="math" src="_images/math/3e8a2463e31514b109921067126c7f197b2fb9d0.png" alt="\mathbf{u}(t) \in \mathbb{R}^{N_u}"/>,
-<img class="math" src="_images/math/b6a43c37e15c8e6b877baa32c604ec1092d66bc0.png" alt="\mathbf{x}(t) \in \mathbb{R}^{N_x}"/> and
-<img class="math" src="_images/math/b816c05b75371a35ab2407b18a6c9e15056eb40e.png" alt="\mathbf{y}(t) \in \mathbb{R}^{N_y}"/>, respectively. The state
-<img class="math" src="_images/math/966b3957adfc27be8d5271ba604bf8a1bd89ee93.png" alt="\mathbf{x}(0)"/> is the <em>initial state</em>. The dynamics of the
+and outputs of the network at time <span class="math notranslate nohighlight">\(t &gt; 0\)</span> are denoted by
+<span class="math notranslate nohighlight">\(\mathbf{u}(t) \in \mathbb{R}^{N_u}\)</span>,
+<span class="math notranslate nohighlight">\(\mathbf{x}(t) \in \mathbb{R}^{N_x}\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{y}(t) \in \mathbb{R}^{N_y}\)</span>, respectively. The state
+<span class="math notranslate nohighlight">\(\mathbf{x}(0)\)</span> is the <em>initial state</em>. The dynamics of the
 network is then given by the following equations:</p>
-<div class="math">
-<p><img src="_images/math/bf2865c68d32dc24445033586153b5f4a5d7dd93.png" alt="\mathbf{\tilde{x}}(t+1) &amp; = f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right) \\
+<div class="math notranslate nohighlight">
+\[\begin{split}\mathbf{\tilde{x}}(t+1) &amp; = f_{res} \left( \mathbf{W_{in}} [\mathbf{1}, \mathbf{u}(t+1)] + \mathbf{W_{res}} \mathbf{x}(t) \right) \\
 \mathbf{x}(t+1)         &amp; = (1-\alpha) \mathbf{x}(t) + \alpha \mathbf{\tilde{x}}(t+1) \\
-\mathbf{y}(t+1)         &amp; = f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)"/></p>
-</div><p>where <img class="math" src="_images/math/09789a8347f3f82806268d0c25af0318b8c78982.png" alt="[\mathbf{a}, \mathbf{b}]"/> denotes the concatenation of
-<img class="math" src="_images/math/ee06d542263974017a04fb2dc754e9708a8f749f.png" alt="\mathbf{a}"/> and <img class="math" src="_images/math/8a01cab30456eeff111a6985d01f7935c84d2731.png" alt="\mathbf{b}"/>, <img class="math" src="_images/math/966b3957adfc27be8d5271ba604bf8a1bd89ee93.png" alt="\mathbf{x}(0)"/> is the
-<em>initial state</em>, <img class="math" src="_images/math/d55766e7d44704c73cd1f8569d6dd84720098ff3.png" alt="f_{res}"/> and <img class="math" src="_images/math/a0bdb96f977cde0f06956049e979a887f5bd5e27.png" alt="f_{out}"/> are the <em>activation
+\mathbf{y}(t+1)         &amp; = f_{out} \left( \mathbf{W_{out}} [\mathbf{1}, \mathbf{x}(t+1)] \right)\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\([\mathbf{a}, \mathbf{b}]\)</span> denotes the concatenation of
+<span class="math notranslate nohighlight">\(\mathbf{a}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{b}\)</span>, <span class="math notranslate nohighlight">\(\mathbf{x}(0)\)</span> is the
+<em>initial state</em>, <span class="math notranslate nohighlight">\(f_{res}\)</span> and <span class="math notranslate nohighlight">\(f_{out}\)</span> are the <em>activation
 functions</em> of the reservoir and output cells (applied component-wise),
-and <img class="math" src="_images/math/2f5aa019312e1bbc969deab8dca8b00f76025404.png" alt="\alpha"/> is the <em>leaking rate</em> (<img class="math" src="_images/math/71f0e9bf0ece63149e8ad7662075a2bdbbc17ff0.png" alt="0 \leq \alpha \leq 1"/>).</p>
+and <span class="math notranslate nohighlight">\(\alpha\)</span> is the <em>leaking rate</em> (<span class="math notranslate nohighlight">\(0 \leq \alpha \leq 1\)</span>).</p>
 <p>The leaking rate controls the update speed of the reservoir dynamics.
-The input weights <img class="math" src="_images/math/1ea2d1e82464290d53ead8f09b3ab70e0339a0f1.png" alt="\mathbf{W_{in}}"/> are initialized randomly from
-a uniform distribution <img class="math" src="_images/math/b1bd9ad21892e1694d4bef0d5f8fbb080c450372.png" alt="\mathcal{U}(-a,a)"/>, where <img class="math" src="_images/math/b3e65e3b6408fcfa00452530b73f55d1755f9965.png" alt="a"/> is the
+The input weights <span class="math notranslate nohighlight">\(\mathbf{W_{in}}\)</span> are initialized randomly from
+a uniform distribution <span class="math notranslate nohighlight">\(\mathcal{U}(-a,a)\)</span>, where <span class="math notranslate nohighlight">\(a\)</span> is the
 <em>input scaling</em>, and kept fixed during the whole training process. The
 input scaling determines the extent of nonlinearity of the reservoir
-response. The reservoir weights <img class="math" src="_images/math/6c407ae0f063af149782d0cd0b7565c2c16f07bf.png" alt="\mathbf{W_{res}}"/> are drawn from
-the uniform or Gaussian distribution, then randomly set to <img class="math" src="_images/math/31fdf41b39df23c95e52c5aef07f59d9adf82f3c.png" alt="0"/>
+response. The reservoir weights <span class="math notranslate nohighlight">\(\mathbf{W_{res}}\)</span> are drawn from
+the uniform or Gaussian distribution, then randomly set to <span class="math notranslate nohighlight">\(0\)</span>
 with a given <em>sparsity rate</em>, and finally rescaled in order to have a
-specific <em>spectral radius</em> <img class="math" src="_images/math/27dc86f9f1b1c3435b2403a869b5870c582facea.png" alt="\rho"/> (usually, we choose
-<img class="math" src="_images/math/1c746857e512def88d7ba62124032c74942c2e97.png" alt="\rho &lt; 1"/>). The reservoir weights <img class="math" src="_images/math/6c407ae0f063af149782d0cd0b7565c2c16f07bf.png" alt="\mathbf{W_{res}}"/> are
+specific <em>spectral radius</em> <span class="math notranslate nohighlight">\(\rho\)</span> (usually, we choose
+<span class="math notranslate nohighlight">\(\rho &lt; 1\)</span>). The reservoir weights <span class="math notranslate nohighlight">\(\mathbf{W_{res}}\)</span> are
 also kept fixed during training. Only the output
-<img class="math" src="_images/math/1c76936938628c7074abb40f66358a3a5bc74b3e.png" alt="\mathbf{W_{out}}"/> are trainable.</p>
+<span class="math notranslate nohighlight">\(\mathbf{W_{out}}\)</span> are trainable.</p>
 </section>
 <section id="training">
 <h2>Training<a class="headerlink" href="#training" title="Permalink to this headline"></a></h2>
-<p>In an ESN, only the output weights <img class="math" src="_images/math/1c76936938628c7074abb40f66358a3a5bc74b3e.png" alt="\mathbf{W_{out}}"/> are trained.
+<p>In an ESN, only the output weights <span class="math notranslate nohighlight">\(\mathbf{W_{out}}\)</span> are trained.
 The training process can be described as follows. Consider some training
-set <img class="math" src="_images/math/f852990c4a225a95d2c694a9f1351f54bac3ba86.png" alt="\mathcal{S}"/> composed of temporal inputs and associated
+set <span class="math notranslate nohighlight">\(\mathcal{S}\)</span> composed of temporal inputs and associated
 targets, i.e.,</p>
-<div class="math">
-<p><img src="_images/math/c677b4448e4c29ebe0ed3c5f32e48a6266adc2d9.png" alt="\mathcal{S} = \Big\{ \big( \mathbf{u}(t), \mathbf{y^{target}}(t) \big) : t = 1, \dots, T \Big\}."/></p>
-</div><p>Let <img class="math" src="_images/math/b34b9e69452a3846f0bdcdaf732fb44b961751ea.png" alt="\mathbf{x}(1), \dots ,\mathbf{x}(T)"/> and
-<img class="math" src="_images/math/ee7921e9bfd3bb467604b8de12cb1c7cb48d5285.png" alt="\mathbf{y}(1), \dots ,\mathbf{y}(T)"/> be the successive reservoir
+<div class="math notranslate nohighlight">
+\[\mathcal{S} = \Big\{ \big( \mathbf{u}(t), \mathbf{y^{target}}(t) \big) : t = 1, \dots, T \Big\}.\]</div>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{x}(1), \dots ,\mathbf{x}(T)\)</span> and
+<span class="math notranslate nohighlight">\(\mathbf{y}(1), \dots ,\mathbf{y}(T)\)</span> be the successive reservoir
 states and predictions obtained when running the ENS on inputs
-<img class="math" src="_images/math/acfb6a2316f91745f7d4c294ffe09e57230cebca.png" alt="\mathbf{u}(1), \dots ,\mathbf{u}(T)"/>, respectively. Then, the
-output weights <img class="math" src="_images/math/1c76936938628c7074abb40f66358a3a5bc74b3e.png" alt="\mathbf{W_{out}}"/> are computed by minimizing some
-cost function <img class="math" src="_images/math/f974f0c9b46db1f26f63611f54dbc26b8268c9ab.png" alt="\mathcal{L}"/> of the predictions and targets via any
+<span class="math notranslate nohighlight">\(\mathbf{u}(1), \dots ,\mathbf{u}(T)\)</span>, respectively. Then, the
+output weights <span class="math notranslate nohighlight">\(\mathbf{W_{out}}\)</span> are computed by minimizing some
+cost function <span class="math notranslate nohighlight">\(\mathcal{L}\)</span> of the predictions and targets via any
 desired learning algorithm – e.g., a simple Ridge regression. Usually,
 some initial transient of the ESN dynamics is used as a warm-up of the
-reservoir, and <img class="math" src="_images/math/1c76936938628c7074abb40f66358a3a5bc74b3e.png" alt="\mathbf{W_{out}}"/> is computed on the basis of the
+reservoir, and <span class="math notranslate nohighlight">\(\mathbf{W_{out}}\)</span> is computed on the basis of the
 remaining suffix of collected states, predictions and and targets.</p>
 <p>Classical temporal tasks involve time series where each point is
 associated with a corresponding target. By contrast, in the present
