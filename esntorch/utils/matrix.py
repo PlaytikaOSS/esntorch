@@ -76,8 +76,12 @@ def generate_gaussian_matrix(size, sparsity=None, mean=0.0, std=1.0, spectral_ra
         Corresponds to the percentage of tensor values that are set to zero.
     mean : float
         Mean of the Gaussian distribution (0.0 by default).
+        Note that after the sparsity mask has been applied and the tensor been rescaled
+        according to some spectral radius, the mean of the elements will be changed.
     std : float
         Standard deviation of the Gaussian distribution (1.0 by default).
+        Note that after the sparsity mask has been applied and the tensor been rescaled
+        according to some spectral radius, the std of the elements will be changed.
     spectral_radius : float
         Spectral radius of the generated tensor (None by default).
         The spectral radius is the absolute value of the largest eigenvalue.
@@ -133,38 +137,11 @@ def adjust_spectral_radius(tensor_2D, spectral_radius):
     return tensor_2D
 
 
-def get_row_index(tensor_2D, val=-1.0):
-    """
-    Gets the index i of the first row of tensor t such that t[i, :] = [val,...,val]
-
-    Parameters
-    ----------
-    tensor_2D : torch.Tensor
-        2D tensor.
-    val :float
-        Value characterizing the constant row to be detected.
-
-    Returns
-    -------
-    index : int
-        Index of the first row of t with constant value val.
-    """
-
-    index = tensor_2D.shape[0] - 1
-
-    while index > 0:
-        if (tensor_2D[index, 0] - val).abs() > 1e-6:
-            break
-        index -= 1
-
-    return index
-
-
 def duplicate_labels(labels, lengths):
     """
-    Duplicates labels
-    E.g.: labels = [l1, l2, l3], lengths = [n1, n2, n3]
-    -> [l1,...(n1 times)...,l1, l2,...(n2 times)...,l2, l3,...(n3 times)...,l3].
+    Duplicates labels tensor according to the lengths tensor.
+    More specifically, if labels = [l1, l2, l3] and lengths = [n1, n2, n3],
+    then the function returns [l1,...(n1 times)...,l1, l2,...(n2 times)...,l2, l3,...(n3 times)...,l3].
 
     Parameters
     ----------
@@ -176,7 +153,7 @@ def duplicate_labels(labels, lengths):
     Returns
     -------
     labels_duplicated: torch.Tensor
-        1D tensor of labels
+        1D tensor of duplicated labels
     """
 
     # for each i, duplicate labels[i] lengths[i] times, and concatenate all those.
@@ -184,46 +161,3 @@ def duplicate_labels(labels, lengths):
 
     return labels_duplicated
 
-
-def crazyexp(x):
-    """
-    Modified exponential function: crazyexp(x) = exp(z) if x > 0; crazyexp(x) = 0 otherwise.
-    Can be broadcasted to tensors of any dimensions.
-
-    Parameters
-    ----------
-    x : float, torch.Tensor
-        input of crazyexp(...)
-
-    Returns
-    -------
-    x: float, torch.Tensor)
-        output of crazyexp(...)
-    """
-
-    x = torch.exp(x) * (x != 0)
-
-    return x
-
-
-def crazysoftmax(vec, dim=-1):
-    """
-    Computes the softmax of vector, but only considering non-zero elements.
-    Can be broadcasted to tensors of higher dimensions.
-
-    Parameters
-    ----------
-    vec : torch.Tensor
-        Vector to be softmaxed
-    dim : int
-        Dimension of along which the sum is performed in the process (-1 by default)
-
-    Returns
-    -------
-    vec : torch.Tensor
-        Softmaxed vector
-    """
-
-    vec = crazyexp(vec)/crazyexp(vec).sum(dim=dim).unsqueeze(dim)
-
-    return vec
