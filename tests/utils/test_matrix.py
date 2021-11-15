@@ -17,13 +17,26 @@
 # IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import torch
+
+# *** WARNING ***
+# For the test, the following packages need to be installed:
+# pip install pytest
+# pip install pytest-cov
+# ---------------
+# Also, use torch version 1.7.1: some functions do not work with torch version 1.9.0
+# ---------------
+# To launch this test file only, run the following command:
+# pytest tests/utils/test_matrix.py
+# To launch all tests inside /esntorch/utils/ with line coverage, run the following command:
+# pytest --cov tests/utils/
+# *** END WARNING ***
+
 
 from esntorch.utils.matrix import *
 import pytest
 
 def test_generate_uniform_matrix():
-    """Test the generate_uniform_matrix function."""
+    """Tests the generate_uniform_matrix function."""
 
     params_d = {'size': (50, 50),
                 'sparsity': 0.95,
@@ -34,24 +47,24 @@ def test_generate_uniform_matrix():
 
     x = generate_uniform_matrix(**params_d)
 
-    # Check tensor size
+    # Checks tensor size
     assert x.shape == params_d['size']
-    # Check tensor sparsity
+    # Checks tensor sparsity
     sparsity = torch.sum(x == 0) / (x.shape[0]*x.shape[1])
     assert params_d['sparsity'] == pytest.approx(sparsity, 0.05)
-    # Check tensor scaling
+    # Checks tensor scaling
     assert x.min() >= -params_d['scaling']
     assert x.max() <= params_d['scaling']
-    # Check tensor spectral radius
-    eigenvalues = torch.linalg.eig(x)[0]
-    rho = max([torch.abs(lamda) for lamda in eigenvalues])
+    # Checks tensor spectral radius
+    eigenvalues = torch.eig(x)[0]
+    rho = max([torch.norm(lamda) for lamda in eigenvalues])
     assert rho == pytest.approx(params_d['spectral_radius'], 0.05)
-    # Check tensor ctype
+    # Checks tensor dtype
     assert x.dtype == params_d['dtype']
 
 
 def test_generate_gaussian_matrix():
-    """Test the generate_gaussian_matrix function."""
+    """Tests the generate_gaussian_matrix function."""
 
     params_d = {'size': (100, 100),
                 'sparsity': 0.95,
@@ -63,16 +76,16 @@ def test_generate_gaussian_matrix():
 
     x = generate_gaussian_matrix(**params_d)
 
-    # Check tensor size
+    # Checks tensor size
     assert x.shape == params_d['size']
-    # Check tensor sparsity
+    # Checks tensor sparsity
     sparsity = torch.sum(x == 0) / (x.shape[0]*x.shape[1])
     assert params_d['sparsity'] == pytest.approx(sparsity, 0.05)
-    # Check tensor spectral radius
-    eigenvalues = torch.linalg.eig(x)[0]
-    rho = max([torch.abs(lamda) for lamda in eigenvalues])
+    # Checks tensor spectral radius
+    eigenvalues = torch.eig(x)[0]
+    rho = max([torch.norm(lamda) for lamda in eigenvalues])
     assert rho == pytest.approx(params_d['spectral_radius'], 0.05)
-    # Check tensor ctype
+    # Checks tensor dtype
     assert x.dtype == params_d['dtype']
 
     # When sparsity is None and spectral_radius is None, the mean and std can be tested (since no rescaling).
@@ -85,27 +98,27 @@ def test_generate_gaussian_matrix():
                 }
 
     x = generate_gaussian_matrix(**params_d)
-    # Check tensor mean
+    # Checks tensor mean
     print('MEAN', x.mean())
     assert x.mean() == pytest.approx(params_d['mean'], 0.05)
-    # Check tensor std
+    # Checks tensor std
     assert x.std() == pytest.approx(params_d['std'], 0.05)
 
 
 def test_adjust_spectral_radius():
-    """Test the adjust_spectral_radius function."""
+    """Tests the adjust_spectral_radius function."""
 
     x = torch.rand(size=(30, 30))
     rho_x = 0.94
     x = adjust_spectral_radius(x, rho_x)
 
-    # Check tensor spectral radius
-    eigenvalues = torch.linalg.eig(x)[0]
-    rho = max([torch.abs(lamda) for lamda in eigenvalues])
+    # Checks tensor spectral radius
+    eigenvalues = torch.eig(x)[0]
+    rho = max([torch.norm(lamda) for lamda in eigenvalues])
     assert rho == pytest.approx(rho_x, 0.01)
 
 def test_duplicate_labels():
-    """Test the duplicate_labels function."""
+    """Tests the duplicate_labels function."""
 
     labels = torch.randint(low=0, high=5, size=(7,))
     lengths = torch.randint(low=10, high=20, size=(7,))

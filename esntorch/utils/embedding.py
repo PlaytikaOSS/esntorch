@@ -24,7 +24,7 @@ from transformers import BertModel
 
 class EmbeddingModel():
     """
-    A BERT object contain a BERT model and a method that implement the BERT embedding of batches.
+    An EmbeddingModel object contain a BERT model and a method that implements the BERT embedding of batches.
     """
 
     def __init__(self, model_name='bert-base-uncased', device=torch.device('cpu')):
@@ -35,52 +35,54 @@ class EmbeddingModel():
         ----------
         model_name : str
             Name of the BERT model and tokenizer.
+            The list of or possible models is provided here: https://huggingface.co/models
+        device : torch.device
+            GPU if available, CPU otherwise.
 
         Attributes
         ----------
+        device : torch.device
+            GPU if available, CPU otherwise.
         model_name : str
-            Name of the BERT model and tokenizer.
+            Name of the BERT model.
             The list of or possible models is provided here: https://huggingface.co/models
-        tokenizer : transformers.models.bert.tokenization_bert.BertTokenizer
-            Tokenizer used in the word embedding process.
-        model :
-            Model used in the word embedding process.
-        device :
-            GPU is available, CPU otherwise.
+        model : e.g., transformers.models.bert.modeling_bert.BertModel
+            Model used for embedding.
         """
 
         self.device = device
         self.model_name = model_name
         self.model = BertModel.from_pretrained(self.model_name, output_hidden_states=True)
         self.model.to(self.device).eval()
-        # print('BERT model downloaded:', model_name)
+        print('Model downloaded:', model_name)
 
     def get_embedding(self, batch):
         """
         Embeds a batch of token ids into a 3D tensor.
-        If a GPU is available, the embedded batch is computed and put on the GPU.
+        We assume that the text is already tokenized into a batch of token ids.
+        If the device is a GPU, the embedded batch is computed and put on the GPU.
 
         Parameters
         ----------
         batch: torch.Tensor
-            2D tensor: batch of text to be embedded.
-            The sentences are represented by the vertical sequences of token ids.
+            2D tensor: batch of token ids embedded.
+            Each tensor column is a (possibly padded) sequence of token ids that represents one batch sentence.
 
         Returns
         -------
         batch_emb : torch.Tensor
-            3D tensor (batch size x max sentence length x embedding dim)
-            BERT embedding of the batch of texts.
+            3D tensor [batch size x max sentence length x embedding dim]
+            BERT embedding of the batch of token ids.
         """
 
         with torch.no_grad():
 
-            # method 1: dynamic embedding
+            # method 1: dynamic embedding - classical way
             # batch_tkn = batch["input_ids"].to(self.device)
             batch = batch.to(self.device)
             batch_emb = self.model(batch["input_ids"], batch["attention_mask"])[0].transpose(0, 1)
 
-            # method 2: concatenate last 2 layers
+            # method 2: dynamic embedding - concatenates the last two layers
             # output = self.model(batch_tkn)
             # batch_emb_1 = output[2][-1]
             # batch_emb_2 = output[2][-2]
