@@ -18,7 +18,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# *** WARNING ***
+# *** INSTRUCTIONS ***
 # For the test, the following packages need to be installed:
 # pip install pytest
 # pip install pytest-cov
@@ -29,7 +29,7 @@
 # pytest tests/utils/test_matrix.py
 # To launch all tests inside /esntorch/utils/ with line coverage, run the following command:
 # pytest --cov tests/utils/
-# *** END WARNING ***
+# *** END INSTRUCTIONS ***
 
 
 from esntorch.utils.matrix import *

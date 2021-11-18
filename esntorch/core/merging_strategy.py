@@ -25,17 +25,18 @@ from torch.autograd import Variable
 
 class MergingStrategy:
     """
-    Implements various merging strategies for grouping successive ESN states.
+    Implements various merging strategies - or pooling layers - for grouping successive ESN states.
 
     Parameters
     ----------
     merging_strategy : None, str
-        The possible merging strategies are: None, 'first', 'last', mean', 'weighted'.
-        None: collect all ESN states (no merging).
+        The possible merging strategies are: None, 'first', 'last', mean', 'weighted', 'lexicon_weighted'.
+        None: collects all the ESN states (no merging).
         'first': takes the first ESN state.
         'last': takes the last ESN state.
         'mean': takes the mean of ESN states.
-        'weighted': takes a weighted mean of ESN states;.
+        'weighted': takes a weighted mean of ESN states.
+        'lexicon_weighted': takes a weighted mean of ESN states, where the words' weights are given by a lexicon.
     weights : torch.Tensor
         Weights to be considered for the weighted mean merging strategy.
         If weights == None (default), computes attention-like weights.
@@ -49,7 +50,9 @@ class MergingStrategy:
         ----------
         merging_strategy : None, str
         weights : None, torch.Tensor
-        lexicon: None, 1D tensor containing the lexicon weights at each index in the vocabulary
+            If not None, 2D tensor
+        lexicon: None, torch.Tensor
+            If not None, 1D tensor containing the lexicon weight of each word id in the vocabulary
         """
 
         self.merging_strategy = merging_strategy
@@ -71,7 +74,7 @@ class MergingStrategy:
         lengths : torch.Tensor
             1D tensor of containing text lengths: (batch size).
         texts: torch.Tensor
-            2D tensor containing word indices of the texts in the batch.
+            2D tensor containing word indices of the texts in the batch (batch size x max text length).
 
         Returns
         -------
@@ -92,13 +95,13 @@ class MergingStrategy:
         states_batch : torch.Tensor
              3D tensor containing the ESN states: (batch size x max text length x reservoir dim).
         lengths : torch.Tensor
-            1D tensor containing text lengths: (batch size).
+            1D tensor containing the length of each text in the batch: (batch size).
         texts: torch.Tensor
-            2D tensor containing word indices of the texts in the batch.
+            2D tensor containing the word indices of the texts in the batch (max text length x batch size).
         merging_strategy : None, str
             None, 'first', 'last', 'mean', 'weighted'.
         weights : None, torch.Tensor
-            2D tensor containing the weights for each state: (batch size x max text length).
+            2D tensor containing the weights for each state (batch size x max text length).
 
         Returns
         -------
