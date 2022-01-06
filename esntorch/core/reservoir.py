@@ -58,6 +58,7 @@ class Reservoir(nn.Module):
     def __init__(self,
                  embedding_weights=None,
                  input_dim=None,
+                 input_scaling=None,
                  reservoir_dim=None,
                  bias_scaling=None,
                  sparsity=None,
@@ -91,6 +92,10 @@ class Reservoir(nn.Module):
         # Random seed
         torch.manual_seed(seed)
         self.seed = seed
+        
+        # Scalings
+        self.input_scaling = input_scaling
+        self.bias_scaling = bias_scaling
 
         # Input and reservoir dim
         self.input_dim = input_dim
@@ -115,20 +120,38 @@ class Reservoir(nn.Module):
 
     def forward(self, batch):
         """
-        Implements the processing of a batch of input texts by the reservoir.
+        Implements the processing of a batch of input texts into the reservoir.
 
         Parameters
         ----------
-        batch : torch.Tensor
-            2D input tensor (max_length x batch_size).
-            A batch of input texts is a 2D tensor.
-            Each tensor column represents a text - given as the sequence of its word indices.
-
+        batch : Union[transformers.tokenization_utils_base.BatchEncoding, torch.Tensor]
+            In the case of a dynamic embedding, like BERT, 
+            batch is a BatchEncoding object output by a Hugging Face tokenizer.
+            Usually, batch contains different keys, like 'attention_mask', 'input_ids', 'labels', 'lengths'...
+            batch['input_ids'] is a 2D tensor (batch_size x max_length) of the form:
+            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                    [ 101, 2054, 2003,  ...,  102,    0,    0],
+                    [ 101, 2073, 2003,  ...,  102,    0,    0],
+                    ...,
+                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+            This tensor is composed by the tokenized sentences of the batch stacked horizontally.
+            In the case of a static embedding, batch is a 2D tensor (batch_size x max_length) of the form:
+            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                    [ 101, 2054, 2003,  ...,  102,    0,    0],
+                    [ 101, 2073, 2003,  ...,  102,    0,    0],
+                    ...,
+                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+            This tensor is composed by the tokenized sentences of the batch stacked horizontally.
+        
         Returns
         -------
         states, lengths : torch.Tensor, torch.Tensor
             states : 3D tensor (batch_size x max_length x reservoir_dim).
-            Reservoir states obtained when processing the batch of inputs.
+            Reservoir states obtained after processing the batch of inputs into the reservoir.
             lengths : 1D tensor (batch_size).
             Lengths of input texts in the batch.
         """
@@ -140,8 +163,11 @@ class Reservoir(nn.Module):
         # case 1
         if callable(self.embedding):
             batch_size = int(batch["input_ids"].shape[0])
-            lengths = batch["lengths"].to(self.device)
+            # -2 because we will ignore the first [CLS], and the last [SEP] 
+            lengths = batch["lengths"].to(self.device) - 2
             embedded_inputs = self.embedding(batch)
+            #Ignore the first [CLS]
+            embedded_inputs = embedded_inputs[1:, :, :]
         # case 2
         elif self.embedding is None:
             batch_size = int(batch.size()[0])
@@ -153,7 +179,7 @@ class Reservoir(nn.Module):
 
         # Set initial reservoir state
         current_reservoir_states = self.initial_state.expand(batch_size, -1).transpose(0, 1)
-
+        
         # For each time step, we process all sentences in the batch concurrently
         for t in range(lengths.max()):
 
@@ -182,43 +208,44 @@ class Reservoir(nn.Module):
 
             # New reservoir state becomes current reservoir state
             current_reservoir_states = x_new
-
+                
         return states, lengths
 
     def reverse_forward(self, batch):
         """
         This function return the reservoir states obtained when the tokens ids
         are passed through the reservoir in the inverse order.
-
-        It applies the forward on a reversed batch
-        (it will not inverse the padding tokens).
+        It applies the forward on a reversed batch.
+        Note that it will not inverse the padding tokens.
 
         Parameters
         ----------
-        batch_tokens : torch.Tensor
-            2D tensor of the batch tokens.
-        lengths : torch.Tensor
-            1D tensor, the token sentences true lengths.
+        batch : Union[transformers.tokenization_utils_base.BatchEncoding, torch.Tensor]
+            3D tensor. See the docstring of the forward method for further description.
 
         Returns
         -------
         reversed_states : torch.Tensor
-            3D tensor of the batch of states of the reversed input, with the padded states in the correct place.
+            3D tensor: batch of states obtained after the processing of the reversed input.
+            The padded states are kept to their initial locations.
+        lengths : torch.Tensor
+            1D tensor: see the docstring of the forward method for further description.
         """
 
-        # flip tensor (cf. Yves code)
+        # flip tensor (cf. Yves code)
         batch_rev = batch.copy()
         batch_rev["input_ids"] = batch["input_ids"].clone()
-
+        
         for i, l in enumerate(batch["lengths"]):
             batch_rev["input_ids"][i, :l] = torch.flip(batch["input_ids"][i, :l], dims=[0])
-
+        
         # make the reversed batch go through the reservoir
         states_rev, lengths = self.forward(batch_rev)
-
+        
         return states_rev, lengths
+    
 
-    def warm_up(self, warm_up_sequence):
+    def warm_up(self, warm_up_sequence, mode=None):
         """
         Performs forward pass of an input sequence and set last reservoir state as new initial state.
 
@@ -236,6 +263,9 @@ class Reservoir(nn.Module):
         warm_states, warm_sentence_length = self.forward(warm_up_sequence)
         # Remove first dimension and take last valid state
         self.initial_state = warm_states[0, warm_sentence_length - 1, :].reshape(-1)
+        
+        if mode == 'return_states':
+            self.warm_states = warm_states
 
 
 class UniformReservoir(Reservoir):
@@ -272,6 +302,7 @@ class UniformReservoir(Reservoir):
 
         super(UniformReservoir, self).__init__(embedding_weights,
                                                input_dim,
+                                               input_scaling,
                                                reservoir_dim,
                                                bias_scaling,
                                                sparsity,
@@ -280,14 +311,17 @@ class UniformReservoir(Reservoir):
                                                activation_function,
                                                seed,
                                                device)
-
-        self.input_scaling = input_scaling
-
+        
+        # Distribution
+        self.distribution = 'uniform'
+        
+        # Inputs
         input_w = mat.generate_uniform_matrix(size=(self.reservoir_dim, self.input_dim),
                                               scaling=self.input_scaling)
         input_w = Variable(input_w, requires_grad=False)
         self.register_buffer('input_w', input_w)
-
+        
+        # Reservoir
         reservoir_w = mat.generate_uniform_matrix(size=(self.reservoir_dim, self.reservoir_dim),
                                                   scaling=self.input_scaling,
                                                   sparsity=self.sparsity,
@@ -296,8 +330,11 @@ class UniformReservoir(Reservoir):
         self.register_buffer('reservoir_w', reservoir_w)
 
         # Bias
-        self.bias_scaling = bias_scaling
-        bias = mat.generate_uniform_matrix(size=(1, self.reservoir_dim), scaling=self.bias_scaling).flatten()
+        if self.bias_scaling is not None:
+            bias = mat.generate_uniform_matrix(size=(1, self.reservoir_dim), 
+                                               scaling=self.bias_scaling).flatten()
+        else:
+            bias = torch.zeros(size=(1, self.reservoir_dim)).flatten()
         bias = Variable(bias, requires_grad=False)
         self.register_buffer('bias', bias)
 
@@ -313,6 +350,7 @@ class GaussianReservoir(Reservoir):
     ----------
     embedding_weights : torch.Tensor
     input_dim : int
+    input_scaling : float
     reservoir_dim : int
     bias_scaling : float
     sparsity : float
@@ -328,6 +366,7 @@ class GaussianReservoir(Reservoir):
     def __init__(self,
                  embedding_weights=None,
                  input_dim=None,
+                 input_scaling=None,
                  reservoir_dim=None,
                  bias_scaling=None,
                  sparsity=None,
@@ -341,6 +380,7 @@ class GaussianReservoir(Reservoir):
 
         super(GaussianReservoir, self).__init__(embedding_weights,
                                                 input_dim,
+                                                input_scaling,
                                                 reservoir_dim,
                                                 bias_scaling,
                                                 sparsity,
@@ -350,15 +390,24 @@ class GaussianReservoir(Reservoir):
                                                 seed,
                                                 device)
 
+        # Distribution, mean, std
+        self.distribution = 'gaussian'
         self.mean = mean
         self.std = std
-
-        input_w = mat.generate_gaussian_matrix(size=(self.reservoir_dim, self.input_dim),
-                                               mean=self.mean,
-                                               std=self.std)
+        
+        # Inputs (these stay uniform)
+#         input_w = mat.generate_gaussian_matrix(size=(self.reservoir_dim, self.input_dim),
+#                                                mean=self.mean,
+#                                                std=self.std)
+#         input_w = Variable(input_w, requires_grad=False)
+#         self.register_buffer('input_w', input_w) 
+        input_w = mat.generate_uniform_matrix(size=(self.reservoir_dim, self.input_dim),
+                                              scaling=self.input_scaling)
         input_w = Variable(input_w, requires_grad=False)
         self.register_buffer('input_w', input_w)
-
+        
+        
+        # Reservoir
         reservoir_w = mat.generate_gaussian_matrix(size=(self.reservoir_dim, self.reservoir_dim),
                                                    sparsity=self.sparsity,
                                                    mean=self.mean,
@@ -368,8 +417,11 @@ class GaussianReservoir(Reservoir):
         self.register_buffer('reservoir_w', reservoir_w)
 
         # Bias
-        self.bias_scaling = bias_scaling
-        bias = mat.generate_uniform_matrix(size=(1, self.reservoir_dim), scaling=self.bias_scaling).flatten()
+        if self.bias_scaling is not None:
+            bias = mat.generate_uniform_matrix(size=(1, self.reservoir_dim), 
+                                               scaling=self.bias_scaling).flatten()
+        else:
+            bias = torch.zeros(size=(1, self.reservoir_dim)).flatten()
         bias = Variable(bias, requires_grad=False)
         self.register_buffer('bias', bias)
 
@@ -475,8 +527,8 @@ class ReservoirFC(UniformReservoir):
     def __init__(self,
                  embedding_weights=None,
                  input_dim=None,
-                 reservoir_dim=None,
                  input_scaling=None,
+                 reservoir_dim=None,
                  bias_scaling=None,
                  sparsity=None,
                  spectral_radius=None,
@@ -488,8 +540,8 @@ class ReservoirFC(UniformReservoir):
         # specify all attributes from Reservoir for proper initialization
         super(ReservoirFC, self).__init__(embedding_weights=embedding_weights,
                                           input_dim=input_dim,
-                                          reservoir_dim=reservoir_dim,
                                           input_scaling=input_scaling,
+                                          reservoir_dim=reservoir_dim,
                                           bias_scaling=bias_scaling,
                                           sparsity=sparsity,
                                           spectral_radius=spectral_radius,
@@ -558,5 +610,5 @@ class ReservoirFC(UniformReservoir):
         bias = self.bias.repeat(batch_size, sentence_dim, 1)
         # x = f(W_in u + b)
         states = self.activation_function(torch.bmm(embedded_inputs, input_w) + bias)
-                
+                        
         return states, lengths

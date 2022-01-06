@@ -104,19 +104,20 @@ class EchoStateNetwork(nn.Module):
         if distribution == 'uniform':
             self.reservoir = res.UniformReservoir(embedding_weights=embedding_weights,
                                                   input_dim=input_dim,
+                                                  input_scaling=input_scaling,
                                                   reservoir_dim=reservoir_dim,
                                                   bias_scaling=bias_scaling,
                                                   sparsity=sparsity,
                                                   spectral_radius=spectral_radius,
                                                   leaking_rate=leaking_rate,
                                                   activation_function=activation_function,
-                                                  input_scaling=input_scaling,
                                                   seed=seed,
                                                   device=self.device)
 
         elif distribution == 'gaussian':
             self.reservoir = res.GaussianReservoir(embedding_weights=embedding_weights,
                                                    input_dim=input_dim,
+                                                   input_scaling=input_scaling,
                                                    reservoir_dim=reservoir_dim,
                                                    bias_scaling=bias_scaling,
                                                    sparsity=sparsity,
@@ -131,8 +132,6 @@ class EchoStateNetwork(nn.Module):
         else:
             print("Invalid distribution of reservoir ('uniform' or 'gaussian')...")
             self.reservoir = None
-
-        self.distribution = distribution
 
         self.merging_strategy = ms.MergingStrategy(merging_strategy, lexicon=lexicon)
 

@@ -76,7 +76,7 @@ class Baseline(esn.EchoStateNetwork):
                                        seed=seed,
                                        device=device)
 
-        # no reservoir in this case
+        # No reservoir in this case
         self.reservoir = res.NoneReservoir(embedding_weights=embedding_weights, seed=seed, device=device)
         self.device = self.device
 
@@ -151,7 +151,7 @@ class CustomBaseline(esn.EchoStateNetwork):
                                              seed=seed,
                                              device=device)
 
-        # no reservoir in this case
+        # Reservoir is an FC in this case
         self.reservoir = res.ReservoirFC(embedding_weights=embedding_weights, 
                                          input_dim=input_dim, 
                                          reservoir_dim=reservoir_dim,
