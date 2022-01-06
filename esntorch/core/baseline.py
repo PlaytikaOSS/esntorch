@@ -79,3 +79,84 @@ class Baseline(esn.EchoStateNetwork):
         # no reservoir in this case
         self.reservoir = res.NoneReservoir(embedding_weights=embedding_weights, seed=seed, device=device)
         self.device = self.device
+
+
+class CustomBaseline(esn.EchoStateNetwork):
+    """
+    Implements the Custom Baseline, which consists of an embedding layer (EMB) 
+    followed by a fully connected layer (FC) followed by a learning algorithm (LA) 
+    (e.g., Ridge regression).
+    Note that the FC layer is not trained.
+    Custom RR-Baseline = EMB + FC + LA
+    This class inherits from EchoStateNetwork
+
+    Parameters
+    ----------
+    embedding_weights : torch.Tensor
+        Embedding matrix.
+    input_dim : int
+        Input dimension.
+    reservoir_dim : int
+        Dimension of the hidden layer onto which the embedded inputs are projected.
+    input_scaling : float
+        Bounds used for the uniform random generation of the input weights.
+    bias_scaling : float
+        Bounds used for the uniform random generation of the bias weights.
+    activation_function : str
+        Activation function of the reservoir cells ('tanh' by default).
+    learning_algo : Union[src.models.learning_algo.RidgeRegression, src.models.learning_algo.LogisticRegression,...]
+        Learning algorithm used to learn the association between the reservoir (merged) states and the targets.
+    criterion : torch.nn.modules.loss
+        Criterion used to compute the loss between tagets and predictions (only if leaning_algo ≠ RidgeRegression).
+    optimizer : torch.optim
+        Optimizer used in the gradient descent method (only if leaning_algo ≠ RidgeRegression).
+    merging_strategy : src.models.merging_strategy.MergingStrategy
+        Merging strategy used to merge the sucessive reservoir states.
+    bidirectional : bool
+        Flag for bi-directionality.
+    seed : torch._C.Generator
+        Random seed.
+    """
+
+    # Constructor
+    def __init__(self,
+                 embedding_weights=None,
+                 input_dim=None,
+                 reservoir_dim=None,
+                 input_scaling=None,
+                 bias_scaling=None,
+                 activation_function='tanh',
+                 learning_algo=None,
+                 criterion=None,
+                 optimizer=None,
+                 merging_strategy=None,
+                 lexicon=None,
+                 bidirectional=False,
+                 seed=42,
+                 device=torch.device('cpu')
+                 ):
+
+        super(CustomBaseline, self).__init__(embedding_weights=embedding_weights,
+                                             input_dim=input_dim,
+                                             reservoir_dim=reservoir_dim,
+                                             input_scaling=input_scaling,
+                                             bias_scaling=bias_scaling,
+                                             activation_function=activation_function,
+                                             learning_algo=learning_algo,
+                                             criterion=criterion,
+                                             optimizer=optimizer,
+                                             merging_strategy=merging_strategy,
+                                             lexicon=lexicon,
+                                             bidirectional=bidirectional,
+                                             seed=seed,
+                                             device=device)
+
+        # no reservoir in this case
+        self.reservoir = res.ReservoirFC(embedding_weights=embedding_weights, 
+                                         input_dim=input_dim, 
+                                         reservoir_dim=reservoir_dim,
+                                         input_scaling=input_scaling,
+                                         bias_scaling=bias_scaling,
+                                         activation_function=activation_function,
+                                         seed=seed, device=device)
+        self.device = self.device

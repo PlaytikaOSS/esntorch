@@ -51,8 +51,8 @@ class EchoStateNetwork(nn.Module):
     leaking_rate : float (between 0 and 1)
         Leaking rate of teh reservoir (between 0 and 1).
         Determines the amount of last state and current input involved in the current state updating.
-    activation_function : builtin_function_or_method
-        Activation function of the reservoir cells (tanh by default).
+    activation_function : str
+        Activation function of the reservoir cells ('tanh' by default).
     input_scaling : float
         Input scaling: bounds used for the input weights random generation (if distribution == 'uniform').
     mean : float
@@ -83,7 +83,7 @@ class EchoStateNetwork(nn.Module):
                  sparsity=None,
                  spectral_radius=None,
                  leaking_rate=1.0,
-                 activation_function=torch.tanh,
+                 activation_function='tanh',
                  input_scaling=None,
                  mean=0.0,
                  std=1.0,
