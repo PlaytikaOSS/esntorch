@@ -69,6 +69,12 @@ class EchoStateNetwork(nn.Module):
         Merging strategy used to merge the sucessive reservoir states.
     bidirectional : bool
         Flag for bi-directionality.
+    mode : str
+        The ESN can be used in different modes in order to implement kinds of models 
+        (classical ESN, baselines, etc.):
+        If mode=='esn', the classical ESN is implemented (EMB + RESERVOIR + LA).
+        If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
+        If mode=='no_layer', the Simple Baseline is implemented (EMB + LA).
     seed : torch._C.Generator
         Random seed.
     """
@@ -94,6 +100,7 @@ class EchoStateNetwork(nn.Module):
                  bidirectional=False,
                  lexicon=None,
                  seed=42,
+                 mode='esn',
                  device=torch.device('cpu'),
                  ):
 
@@ -139,6 +146,8 @@ class EchoStateNetwork(nn.Module):
         self.criterion = criterion
         self.optimizer = optimizer
         self.bidirectional = bidirectional
+        
+        self.mode = mode
 
     def warm_up(self, warm_up_sequence):
         """
@@ -227,12 +236,12 @@ class EchoStateNetwork(nn.Module):
                 batch_label = batch.label
 
             # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)   # states
+            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)   # states
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
             labels = batch_label
 
@@ -295,12 +304,12 @@ class EchoStateNetwork(nn.Module):
                     batch_label = batch.label
 
                 # Pass the tokens through the reservoir
-                states, lengths = self.reservoir.forward(batch_text)  # states
+                states, lengths = self.reservoir.forward(batch_text, mode=self.mode)  # states
 
                 # Do the same as above but with the sentences reversed
                 reversed_states = None
                 if self.bidirectional:
-                    reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                    reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
                 labels = batch_label.type(torch.int64)                  # labels (converted to int for the loss)
                 # if merging_strategy is None: duplicate labels
@@ -447,12 +456,12 @@ class EchoStateNetwork(nn.Module):
                 batch_label = batch.label
 
             # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)
+            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
             # apply the correct merging strategy and bi-directionality if needed.
             final_states = self._apply_merge_strategy(states, lengths, batch_text, reversed_states)
