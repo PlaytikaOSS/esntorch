@@ -51,8 +51,8 @@ class EchoStateNetwork(nn.Module):
     leaking_rate : float (between 0 and 1)
         Leaking rate of teh reservoir (between 0 and 1).
         Determines the amount of last state and current input involved in the current state updating.
-    activation_function : builtin_function_or_method
-        Activation function of the reservoir cells (tanh by default).
+    activation_function : str
+        Activation function of the reservoir cells ('tanh' by default).
     input_scaling : float
         Input scaling: bounds used for the input weights random generation (if distribution == 'uniform').
     mean : float
@@ -69,6 +69,12 @@ class EchoStateNetwork(nn.Module):
         Merging strategy used to merge the sucessive reservoir states.
     bidirectional : bool
         Flag for bi-directionality.
+    mode : str
+        The ESN can be used in different modes in order to implement kinds of models 
+        (classical ESN, baselines, etc.):
+        If mode=='esn', the classical ESN is implemented (EMB + RESERVOIR + LA).
+        If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
+        If mode=='no_layer', the Simple Baseline is implemented (EMB + LA).
     seed : torch._C.Generator
         Random seed.
     """
@@ -83,7 +89,7 @@ class EchoStateNetwork(nn.Module):
                  sparsity=None,
                  spectral_radius=None,
                  leaking_rate=1.0,
-                 activation_function=torch.tanh,
+                 activation_function='tanh',
                  input_scaling=None,
                  mean=0.0,
                  std=1.0,
@@ -94,6 +100,7 @@ class EchoStateNetwork(nn.Module):
                  bidirectional=False,
                  lexicon=None,
                  seed=42,
+                 mode='esn',
                  device=torch.device('cpu'),
                  ):
 
@@ -104,19 +111,20 @@ class EchoStateNetwork(nn.Module):
         if distribution == 'uniform':
             self.reservoir = res.UniformReservoir(embedding_weights=embedding_weights,
                                                   input_dim=input_dim,
+                                                  input_scaling=input_scaling,
                                                   reservoir_dim=reservoir_dim,
                                                   bias_scaling=bias_scaling,
                                                   sparsity=sparsity,
                                                   spectral_radius=spectral_radius,
                                                   leaking_rate=leaking_rate,
                                                   activation_function=activation_function,
-                                                  input_scaling=input_scaling,
                                                   seed=seed,
                                                   device=self.device)
 
         elif distribution == 'gaussian':
             self.reservoir = res.GaussianReservoir(embedding_weights=embedding_weights,
                                                    input_dim=input_dim,
+                                                   input_scaling=input_scaling,
                                                    reservoir_dim=reservoir_dim,
                                                    bias_scaling=bias_scaling,
                                                    sparsity=sparsity,
@@ -132,14 +140,14 @@ class EchoStateNetwork(nn.Module):
             print("Invalid distribution of reservoir ('uniform' or 'gaussian')...")
             self.reservoir = None
 
-        self.distribution = distribution
-
         self.merging_strategy = ms.MergingStrategy(merging_strategy, lexicon=lexicon)
 
         self.learning_algo = learning_algo
         self.criterion = criterion
         self.optimizer = optimizer
         self.bidirectional = bidirectional
+        
+        self.mode = mode
 
     def warm_up(self, warm_up_sequence):
         """
@@ -228,12 +236,12 @@ class EchoStateNetwork(nn.Module):
                 batch_label = batch.label
 
             # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)   # states
+            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)   # states
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
             labels = batch_label
 
@@ -296,12 +304,12 @@ class EchoStateNetwork(nn.Module):
                     batch_label = batch.label
 
                 # Pass the tokens through the reservoir
-                states, lengths = self.reservoir.forward(batch_text)  # states
+                states, lengths = self.reservoir.forward(batch_text, mode=self.mode)  # states
 
                 # Do the same as above but with the sentences reversed
                 reversed_states = None
                 if self.bidirectional:
-                    reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                    reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
                 labels = batch_label.type(torch.int64)                  # labels (converted to int for the loss)
                 # if merging_strategy is None: duplicate labels
@@ -448,12 +456,12 @@ class EchoStateNetwork(nn.Module):
                 batch_label = batch.label
 
             # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)
+            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
             # apply the correct merging strategy and bi-directionality if needed.
             final_states = self._apply_merge_strategy(states, lengths, batch_text, reversed_states)

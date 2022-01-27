@@ -195,14 +195,18 @@ class RidgeRegression(torch.nn.Module):
 
         y_ = torch.zeros(y.size()[0], torch.unique(y).size()[0], dtype=torch.float32, device=device)
         y_ = y_.scatter(1, y.long().unsqueeze(1), 1.0)
-
+    
+        # tmp lines to get X_ and y_
+        self.X_ = X_
+        self.y_ = y_
+            
         LI = torch.eye(X_.size()[1], device=device) * self.alpha
         Xt = torch.transpose(X_, 0, 1)
         beta = torch.mm(Xt, X_) + LI
         beta = torch.pinverse(beta)     # use torch.pinverse() to compute pseudo-inverse via SVD.
         beta = torch.mm(beta, Xt)
         beta = torch.mm(beta, y_)
-
+        
         self.weights = beta
 
     # Forward function
