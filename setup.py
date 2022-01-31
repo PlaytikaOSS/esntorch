@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="esntorch",
-    version="0.0.2",
+    version="0.0.3",
     description="Python library: Echo state Networks for NLP",
     long_description=long_description,
     long_description_content_type="text/markdown",
