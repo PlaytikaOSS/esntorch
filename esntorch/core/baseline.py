@@ -83,8 +83,8 @@ class Baseline(esn.EchoStateNetwork):
 
 class CustomBaseline(esn.EchoStateNetwork):
     """
-    Implements the Custom Baseline, which consists of an embedding layer (EMB) 
-    followed by a fully connected layer (FC) followed by a learning algorithm (LA) 
+    Implements the Custom Baseline, which consists of an embedding layer (EMB)
+    followed by a fully connected layer (FC) followed by a learning algorithm (LA)
     (e.g., Ridge regression).
     Note that the FC layer is not trained.
     Custom RR-Baseline = EMB + FC + LA
@@ -152,8 +152,8 @@ class CustomBaseline(esn.EchoStateNetwork):
                                              device=device)
 
         # Reservoir is an FC in this case
-        self.reservoir = res.ReservoirFC(embedding_weights=embedding_weights, 
-                                         input_dim=input_dim, 
+        self.reservoir = res.ReservoirFC(embedding_weights=embedding_weights,
+                                         input_dim=input_dim,
                                          reservoir_dim=reservoir_dim,
                                          input_scaling=input_scaling,
                                          bias_scaling=bias_scaling,
