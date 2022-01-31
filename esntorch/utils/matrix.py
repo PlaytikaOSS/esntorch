@@ -160,4 +160,3 @@ def duplicate_labels(labels, lengths):
     labels_duplicated = torch.cat([labels.view(-1)[i].repeat(lengths[i]).view(-1) for i in range(len(lengths))], dim=0)
 
     return labels_duplicated
-

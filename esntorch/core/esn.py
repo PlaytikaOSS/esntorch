@@ -70,7 +70,7 @@ class EchoStateNetwork(nn.Module):
     bidirectional : bool
         Flag for bi-directionality.
     mode : str
-        The ESN can be used in different modes in order to implement kinds of models 
+        The ESN can be used in different modes in order to implement kinds of models
         (classical ESN, baselines, etc.):
         If mode=='esn', the classical ESN is implemented (EMB + RESERVOIR + LA).
         If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
@@ -146,7 +146,7 @@ class EchoStateNetwork(nn.Module):
         self.criterion = criterion
         self.optimizer = optimizer
         self.bidirectional = bidirectional
-        
+
         self.mode = mode
 
     def warm_up(self, warm_up_sequence):

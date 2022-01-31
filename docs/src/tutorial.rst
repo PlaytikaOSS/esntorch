@@ -1,32 +1,27 @@
-.. _tutorial:
-
 Tutorial
 ========
 
 This notebook provides a use case example of the ``EsnTorch`` library.
-It described the implementation of an Echo State Network (ESN) for text
-classification on the TREC-6 dataset.
+It described the implementation of an **Echo State Network (ESN)** for
+text classification on the **TREC-6** dataset.
 
 The instantiation, training and evaluation of an ESN for text
-classification is achieved via the following steps:
-#. Import the required modules
-#. Create the dataloaders
-#. Instantiate the ESN by specifying:
-* a reservoir
-* a loss function
-* a learning algorithm
-#. Train the ESN
-#. Results
+classification is achieved via the following steps: - Import the
+required modules - Create the dataloaders - Instantiate the ESN by
+specifying: - a reservoir - a loss function - a learning algorithm -
+Train the ESN - Training and testing results
 
 Librairies
 ----------
 
 .. code:: ipython3
 
-    #!pip install datasets==1.7.0
+    # !pip install transformers==4.8.2
+    # !pip install datasets==1.7.0
 
 .. code:: ipython3
 
+    # Comment this if library is installed
     import os
     import sys
     sys.path.insert(0, os.path.abspath(".."))
@@ -48,6 +43,11 @@ Librairies
     import esntorch.core.learning_algo as la
     import esntorch.core.merging_strategy as ms
     import esntorch.core.esn as esn
+
+.. code:: ipython3
+
+    %load_ext autoreload
+    %autoreload 2
 
 
 Device and Seed
@@ -76,13 +76,10 @@ Load and Tokenize Data
     # Custom functions for loading and preparing data
     
     def tokenize(sample):
-        """Tokenize sample: variable 'tokenizer' contains the """
-        sample = tokenizer(sample['text'], truncation=True, padding=False)
-        return sample
+        """Tokenize sample"""
         
-    def add_lengths(sample):
-        """Add 'lengths' field to sort batch by length"""
-        sample["lengths"] = sum(sample["input_ids"] != 0)
+        sample = tokenizer(sample['text'], truncation=True, padding=False, return_length=True)
+        
         return sample
         
     def load_and_prepare_dataset(dataset_name, split, cache_dir):
@@ -94,16 +91,13 @@ Load and Tokenize Data
         # Load dataset
         dataset = load_dataset(dataset_name, split=split, cache_dir=CACHE_DIR)
         
-        # Rename label column (use 'label-fine' for fine-grained labels)
-        # Used for tokenization purposes.
+        # Rename label column for tokenization purposes (use 'label-fine' for fine-grained labels)
         dataset = dataset.rename_column('label-coarse', 'labels')
         
         # Tokenize data
         dataset = dataset.map(tokenize, batched=True)
-        dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-        
-        # Add 'lengths' feature
-        dataset = dataset.map(add_lengths, batched=False)
+        dataset = dataset.rename_column('length', 'lengths')
+        dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels', 'lengths'])
         
         return dataset
 
@@ -129,64 +123,29 @@ Load and Tokenize Data
 .. parsed-literal::
 
     Using custom data configuration default
-
-
-.. parsed-literal::
-
-    Downloading and preparing dataset trec/default (download: 350.79 KiB, generated: 403.39 KiB, post-processed: Unknown size, total: 754.18 KiB) to cache_dir/trec/default/1.1.0/751da1ab101b8d297a3d6e9c79ee9b0173ff94c4497b75677b59b61d5467a9b9...
+    Reusing dataset trec (cache_dir/trec/default/1.1.0/751da1ab101b8d297a3d6e9c79ee9b0173ff94c4497b75677b59b61d5467a9b9)
 
 
 
 .. parsed-literal::
 
-    Downloading:   0%|          | 0.00/336k [00:00<?, ?B/s]
+    HBox(children=(FloatProgress(value=0.0, max=6.0), HTML(value='')))
+
+
+.. parsed-literal::
+
+    
 
 
 
 .. parsed-literal::
 
-    Downloading:   0%|          | 0.00/23.4k [00:00<?, ?B/s]
-
-
-
-.. parsed-literal::
-
-    0 examples [00:00, ? examples/s]
-
+    HBox(children=(FloatProgress(value=0.0, max=1.0), HTML(value='')))
 
 
 .. parsed-literal::
 
-    0 examples [00:00, ? examples/s]
-
-
-.. parsed-literal::
-
-    Dataset trec downloaded and prepared to cache_dir/trec/default/1.1.0/751da1ab101b8d297a3d6e9c79ee9b0173ff94c4497b75677b59b61d5467a9b9. Subsequent calls will reuse this data.
-
-
-
-.. parsed-literal::
-
-      0%|          | 0/6 [00:00<?, ?ba/s]
-
-
-
-.. parsed-literal::
-
-      0%|          | 0/1 [00:00<?, ?ba/s]
-
-
-
-.. parsed-literal::
-
-      0%|          | 0/5452 [00:00<?, ?ex/s]
-
-
-
-.. parsed-literal::
-
-      0%|          | 0/500 [00:00<?, ?ex/s]
+    
 
 
 .. code:: ipython3
@@ -227,8 +186,8 @@ Load and Tokenize Data
 
 .. parsed-literal::
 
-    {'train': <torch.utils.data.dataloader.DataLoader at 0x7f7f799db090>,
-     'test': <torch.utils.data.dataloader.DataLoader at 0x7f7f99333ad0>}
+    {'train': <torch.utils.data.dataloader.DataLoader at 0x7fa0a176b8d0>,
+     'test': <torch.utils.data.dataloader.DataLoader at 0x7fa0a176ba10>}
 
 
 
@@ -243,37 +202,62 @@ Model
                 'embedding_weights': 'bert-base-uncased', # TEXT.vocab.vectors,
                 'distribution' : 'uniform',               # uniform, gaussian
                 'input_dim' : 768,                        # dim of BERT encoding!
-                'reservoir_dim' : 500,
-                'bias_scaling' : 1.0,
-                'sparsity' : 0.99,
-                'spectral_radius' : 0.9,
-                'leaking_rate': 0.5,
-                'activation_function' : 'tanh',
-                'input_scaling' : 1.0,
+                'reservoir_dim' : 1000,
+                'bias_scaling' : 0., #1.0742377381236705, # 1.0,
+                'sparsity' : 0.,
+                'spectral_radius' : 0.7094538192983408, # 0.9,
+                'leaking_rate': 0.17647315261153904, # 0.5,
+                'activation_function' : 'relu',
+                'input_scaling' : 0.1, # 1.0,
                 'mean' : 0.0,
                 'std' : 1.0,
-                #'learning_algo' : None, # initialzed below
-                #'criterion' : None,     # initialzed below
-                #'optimizer' : None,     # initialzed below
+                #'learning_algo' : None,     # initialzed below
+                #'criterion' : None,         # initialzed below
+                #'optimizer' : None,         # initialzed below
                 'merging_strategy' : 'mean',
-                'bidirectional' : False, # True
+                'bidirectional' : False,     # True
                 'device' : device,
-                'seed' : 42
+                'mode' : 'esn',              # 'no_layer', 'linear_layer'
+                'seed' : 42345
                  }
     
     # Instantiate the ESN
     ESN = esn.EchoStateNetwork(**esn_params)
     
     # Define the learning algo of the ESN
-    ESN.learning_algo = la.RidgeRegression(alpha=10)
+    # Ridge Regression
+    ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
+    
+    # Logistic Regression (uncomment below)
+    # if esn_params['mode'] == 'no_layer':
+    #     input_dim = esn_params['input_dim']
+    # else:
+    #     input_dim = esn_params['reservoir_dim']
+        
+    # ESN.learning_algo = la.LogisticRegression(input_dim=input_dim, output_dim=6)
+    # ESN.criterion = torch.nn.CrossEntropyLoss()                                  # loss
+    # ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)    # optimizer
     
     # Put the ESN on the device (CPU or GPU)
     ESN = ESN.to(device)
 
+
+.. parsed-literal::
+
+    Some weights of the model checkpoint at bert-base-uncased were not used when initializing BertModel: ['cls.predictions.decoder.weight', 'cls.seq_relationship.bias', 'cls.predictions.transform.dense.weight', 'cls.seq_relationship.weight', 'cls.predictions.transform.LayerNorm.bias', 'cls.predictions.transform.LayerNorm.weight', 'cls.predictions.bias', 'cls.predictions.transform.dense.bias']
+    - This IS expected if you are initializing BertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+    - This IS NOT expected if you are initializing BertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+
+
+.. parsed-literal::
+
+    Model downloaded: bert-base-uncased
+
+
 .. code:: ipython3
 
-    # Warm up the ESN on 3 sentences
-    nb_sentences = 3
+    # Warm up the ESN on multiple sentences
+    nb_sentences = 10
     
     for i in range(nb_sentences): 
         sentence = dataset_d["train"].select([i])
@@ -290,8 +274,22 @@ Training
 
 .. code:: ipython3
 
+    %%time
     # training the ESN
     ESN.fit(dataloader_d["train"])
+
+
+.. parsed-literal::
+
+    CPU times: user 2min 34s, sys: 7.61 s, total: 2min 41s
+    Wall time: 2min 15s
+
+
+.. code:: ipython3
+
+    # %%time
+    # # training the ESN (Logistic Regression, gradient descent)
+    # ESN.fit(dataloader_d["train"], epochs=10, iter_steps=10)
 
 
 Results
@@ -308,7 +306,7 @@ Results
 
 .. parsed-literal::
 
-    86.86720275878906
+    92.33309173583984
 
 
 
@@ -323,30 +321,31 @@ Results
 
 .. parsed-literal::
 
-    87.80000305175781
+    93.4000015258789
 
 
 
 .. code:: ipython3
 
     # Test classification report
-    print(classification_report(test_pred.tolist(), dataset_d['test']['labels'].tolist()))
+    print(classification_report(test_pred.tolist(), 
+                                dataset_d['test']['labels'].tolist(), 
+                                digits=4))
 
 
 .. parsed-literal::
 
                   precision    recall  f1-score   support
     
-               0       0.94      0.88      0.91       148
-               1       0.65      0.86      0.74        71
-               2       0.56      1.00      0.71         5
-               3       0.95      0.89      0.92        70
-               4       0.95      0.90      0.92       119
-               5       0.91      0.85      0.88        87
+               0     0.9638    0.9048    0.9333       147
+               1     0.8085    0.9620    0.8786        79
+               2     0.6667    1.0000    0.8000         6
+               3     0.9692    0.9265    0.9474        68
+               4     0.9823    0.9407    0.9610       118
+               5     0.9630    0.9512    0.9571        82
     
-        accuracy                           0.88       500
-       macro avg       0.83      0.90      0.85       500
-    weighted avg       0.89      0.88      0.88       500
+        accuracy                         0.9340       500
+       macro avg     0.8922    0.9475    0.9129       500
+    weighted avg     0.9407    0.9340    0.9354       500
     
-
 

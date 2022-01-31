@@ -8,8 +8,8 @@ Installation
 Installation
 ------------
 
-This library is distributed on `PyPi <https://pypi.org/>`_ and
-can be installed with ``pip``. The latest release is version ``0.0.2``.
+This library is distributed on `PyPi <https://pypi.org/project/esntorch/>`_ and
+can be installed with ``pip`` using the command below. The latest release is version ``0.0.2``.
 
 .. code::
 
@@ -35,7 +35,7 @@ You can install the library and the dependencies with one of the following comma
     $ pip install .                        # install library + dependencies
     $ pip install -r requirements.txt      # install dependencies
 
-To create the python wheel file ``pyabtest.whl`` for installation with ``pip``
+To create the python wheel file ``esntorch.whl`` for installation with ``pip``
 run the following command:
 
 .. code::
