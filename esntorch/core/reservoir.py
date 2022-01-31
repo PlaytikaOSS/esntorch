@@ -129,22 +129,30 @@ class Reservoir(nn.Module):
             batch is a BatchEncoding object output by a Hugging Face tokenizer.
             Usually, batch contains different keys, like 'attention_mask', 'input_ids', 'labels', 'lengths'...
             batch['input_ids'] is a 2D tensor (batch_size x max_length) of the form:
-            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
-                    [ 101, 2054, 2003,  ...,  102,    0,    0],
-                    [ 101, 2073, 2003,  ...,  102,    0,    0],
-                    ...,
-                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
-                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
-                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
+            ::
+
+                tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                        [ 101, 2054, 2003,  ...,  102,    0,    0],
+                        [ 101, 2073, 2003,  ...,  102,    0,    0],
+                        ...,
+                        [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                        [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                        [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
             This tensor is composed by the tokenized sentences of the batch stacked horizontally.
             In the case of a static embedding, batch is a 2D tensor (batch_size x max_length) of the form:
-            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
-                    [ 101, 2054, 2003,  ...,  102,    0,    0],
-                    [ 101, 2073, 2003,  ...,  102,    0,    0],
-                    ...,
-                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
-                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
-                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
+            ::
+
+                tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                        [ 101, 2054, 2003,  ...,  102,    0,    0],
+                        [ 101, 2073, 2003,  ...,  102,    0,    0],
+                        ...,
+                        [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                        [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                        [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
             This tensor is composed by the tokenized sentences of the batch stacked horizontally.
 
         Returns
@@ -259,22 +267,30 @@ class Reservoir(nn.Module):
             batch is a BatchEncoding object output by a Hugging Face tokenizer.
             Usually, batch contains different keys, like 'attention_mask', 'input_ids', 'labels', 'lengths'...
             batch['input_ids'] is a 2D tensor (batch_size x max_length) of the form:
-            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
-                    [ 101, 2054, 2003,  ...,  102,    0,    0],
-                    [ 101, 2073, 2003,  ...,  102,    0,    0],
-                    ...,
-                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
-                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
-                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
+            ::
+
+                tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                        [ 101, 2054, 2003,  ...,  102,    0,    0],
+                        [ 101, 2073, 2003,  ...,  102,    0,    0],
+                        ...,
+                        [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                        [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                        [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
             This tensor is composed by the tokenized sentences of the batch stacked horizontally.
             In the case of a static embedding, batch is a 2D tensor (batch_size x max_length) of the form:
-            tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
-                    [ 101, 2054, 2003,  ...,  102,    0,    0],
-                    [ 101, 2073, 2003,  ...,  102,    0,    0],
-                    ...,
-                    [ 101, 2054, 2001,  ..., 7064, 1029,  102],
-                    [ 101, 2054, 2024,  ..., 2015, 1029,  102],
-                    [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
+            ::
+
+                tensor([[ 101, 2129, 2001,  ...,    0,    0,    0],
+                        [ 101, 2054, 2003,  ...,  102,    0,    0],
+                        [ 101, 2073, 2003,  ...,  102,    0,    0],
+                        ...,
+                        [ 101, 2054, 2001,  ..., 7064, 1029,  102],
+                        [ 101, 2054, 2024,  ..., 2015, 1029,  102],
+                        [ 101, 2073, 2003,  ..., 2241, 1029,  102]])
+
             This tensor is composed by the tokenized sentences of the batch stacked horizontally.
         mode : str
             'esn' implements foward pass of the ESN (EMB + RESERVOIR + LA).
