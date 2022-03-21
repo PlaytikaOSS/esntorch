@@ -364,7 +364,8 @@ class EchoStateNetwork(nn.Module):
 
         # Closed-form training (for RR, RF)
         if isinstance(self.learning_algo, la.RidgeRegression) or \
-                isinstance(self.learning_algo, la.LogisticRegression2):
+            isinstance(self.learning_algo, la.LogisticRegression2) or \
+            isinstance(self.learning_algo, la.LinearSVC):
 
             return self._fit_direct(train_dataloader)
 
@@ -416,8 +417,10 @@ class EchoStateNetwork(nn.Module):
             predictions = outputs.argmax(dim=1)
 
         else:                                                       # merging strategy is not None
-
-            outputs = raw_outputs.argmax(dim=1).float()
+            if raw_outputs.dim() != 1: # the learning algo returns the probas
+                outputs = raw_outputs.argmax(dim=1).float()
+            else:                      # the learning algo returns the classes
+                outputs = raw_outputs.float()
             predictions = outputs.type(torch.int64)
 
         return predictions
@@ -478,8 +481,8 @@ class EchoStateNetwork(nn.Module):
             # otherwise: pure prediction mode
             except Exception:
                 pass
-
-        accuracy = 100 * correct / float(total) if testing_mode else None
+        
+        accuracy = 100 * correct.item() / float(total) if testing_mode else None
         predictions_l = torch.cat(predictions_l, dim=0).cpu().detach().numpy()
 
         if verbose and testing_mode:
