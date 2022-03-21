@@ -364,6 +364,7 @@ class EchoStateNetwork(nn.Module):
 
         # Closed-form training (for RR, RF)
         if isinstance(self.learning_algo, la.RidgeRegression) or \
+            isinstance(self.learning_algo, la.RidgeRegression2) or \
             isinstance(self.learning_algo, la.LogisticRegression2) or \
             isinstance(self.learning_algo, la.LinearSVC):
 
