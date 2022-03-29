@@ -20,10 +20,11 @@
 
 import torch
 from sklearn.linear_model import LogisticRegression as LogisticRegression_
+from sklearn.linear_model import RidgeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC as LinearSVC_
 
 
 class LogisticRegression(torch.nn.Module):
@@ -238,6 +239,85 @@ class RidgeRegression(torch.nn.Module):
         outputs = torch.mm(X_, self.weights)
 
         return outputs
+
+    
+class RidgeRegression2:
+    """
+    Implements Ridge Regression from scikit learn.
+
+    Parameters
+    ----------
+        Same parameters as those of sklearn.linear_model.Ridge
+    """
+
+    # Constructor
+    def __init__(self,
+                 alpha=1.0,
+                 fit_intercept=True,
+                 normalize='deprecated',
+                 copy_X=True,
+                 max_iter=None,
+                 tol=0.001,
+                 solver='auto',
+                 positive=False,
+                 random_state=None):
+
+        self.RR = RidgeClassifier(alpha=alpha,
+                                  fit_intercept=fit_intercept,
+                                  normalize=normalize,
+                                  copy_X=copy_X,
+                                  max_iter=max_iter,
+                                  tol=tol,
+                                  solver=solver,
+                                  positive=positive,
+                                  random_state=random_state)
+
+    def fit(self, X, y):
+        """
+        Overrides fit method of Ridge.
+        Simply convert torch tensors into numpy and apply original fit method.
+
+        Parameters
+        ----------
+        X : torch.Tensor
+            Tensor of features (gathered by rows).
+        y : torch.Tensor
+            Tensor of targets (gathered by rows).
+        """
+        
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
+            y = y.cpu()
+        X = X.numpy()
+        y = y.numpy()
+        self.RR.fit(X, y)
+
+    # Override parentheses method
+    def __call__(self, X):
+        """
+        Overrides parentheses method by predict method of Ridge.
+        Simply convert torch tensors into numpy and apply original predict_proba method.
+
+        Parameters
+        ----------
+        X : torch.Tensor
+            Tensor of features (gathered by rows).
+
+        Returns
+        -------
+        outputs : torch.Tensor
+            Outputs of Ridge regression
+        """
+
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
+        X = X.numpy()
+        outputs = self.RR.predict(X)
+        outputs = torch.from_numpy(outputs).to(device)
+
+        return outputs    
 
 
 class RandomForest:
@@ -503,7 +583,11 @@ class LogisticRegression2:
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-
+        
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
+            y = y.cpu()
         X = X.numpy()
         y = y.numpy()
         self.LR.fit(X, y)
@@ -526,6 +610,8 @@ class LogisticRegression2:
         """
 
         device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
         X = X.numpy()
         outputs = self.LR.predict_proba(X)
         outputs = torch.from_numpy(outputs).to(device)
@@ -533,13 +619,14 @@ class LogisticRegression2:
         return outputs
 
 
-class LinearSVCLayer:
+class LinearSVC:
     """
     Implements Linear Support Vector Machine Classifier from scikit learn.
 
     Parameters
     ----------
-        Same parameters as those of sklearn.svm.LinearSVC
+        Same parameters as those of sklearn.svm.LinearSVC:
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
     """
 
     # Constructor
@@ -557,23 +644,23 @@ class LinearSVCLayer:
                  random_state=None,
                  max_iter=1000):
 
-        self.SVC = LinearSVC(penalty=penalty,
-                             loss=loss,
-                             dual=dual,
-                             tol=tol,
-                             C=C,
-                             multi_class=multi_class,
-                             fit_intercept=fit_intercept,
-                             intercept_scaling=intercept_scaling,
-                             class_weight=class_weight,
-                             verbose=verbose,
-                             random_state=random_state,
-                             max_iter=max_iter)
-
+        self.SVC = LinearSVC_(penalty=penalty,
+                              loss=loss,
+                              dual=dual,
+                              tol=tol,
+                              C=C,
+                              multi_class=multi_class,
+                              fit_intercept=fit_intercept,
+                              intercept_scaling=intercept_scaling,
+                              class_weight=class_weight,
+                              verbose=verbose,
+                              random_state=random_state,
+                              max_iter=max_iter)
+ 
     def fit(self, X, y):
         """
-        Overrides fit method of GaussianNB.
-        Simply convert torch tensors into numpy and apply original fit method.
+        Overrides fit method of LinearSVC.
+        Simply convert torch tensors into numpy arrays and apply original fit method.
 
         Parameters
         ----------
@@ -582,7 +669,11 @@ class LinearSVCLayer:
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-
+        
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
+            y = y.cpu()
         X = X.numpy()
         y = y.numpy()
         self.SVC.fit(X, y)
@@ -590,8 +681,8 @@ class LinearSVCLayer:
     # Override parentheses method
     def __call__(self, X):
         """
-        Overrides parentheses method by predict method of MultinomialNB.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
+        Overrides parentheses method by predict method of LinearSVC.
+        Simply convert torch tensors into numpy arrays and apply original predict_proba method.
 
         Parameters
         ----------
@@ -605,8 +696,10 @@ class LinearSVCLayer:
         """
 
         device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
         X = X.numpy()
-        outputs = self.SVC.predict_proba(X)
+        outputs = self.SVC.predict(X)
         outputs = torch.from_numpy(outputs).to(device)
 
         return outputs

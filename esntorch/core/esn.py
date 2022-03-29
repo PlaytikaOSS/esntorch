@@ -161,7 +161,8 @@ class EchoStateNetwork(nn.Module):
 
         self.reservoir.warm_up(warm_up_sequence)
 
-    def _apply_merge_strategy(self, states, lengths, texts, reversed_states=None):
+    def _apply_merge_strategy(self, states, lengths, texts, 
+                              reversed_states=None, additional_fts=None):
         """
         Merges the corresponding reservoir states depending on the merging strategy
         and the whether to apply bi-directionality or not.
@@ -177,6 +178,9 @@ class EchoStateNetwork(nn.Module):
         reversed_states : torch.Tensor
             3D tensor: Optional, the states of the token that went through the reservoir
             in the reverse order when the bi-directional flag is set.
+        additional_fts : None, torch.Tensor
+            2D tensor containing new features (e.g. tf-idf) 
+            to be concatenated to each merged state (batch size x dim additional_fts).
 
         Returns
         -------
@@ -195,12 +199,12 @@ class EchoStateNetwork(nn.Module):
                 final_states = self.merging_strategy(concatenated_states, lengths, texts)
             else:
                 # concatenate the normal and reversed states after their merging
-                normal_merged_states = self.merging_strategy(states, lengths, texts)
+                normal_merged_states = self.merging_strategy(states, lengths, texts, additional_fts)
                 reversed_merged_states = self.merging_strategy(reversed_states, lengths, texts)
                 # concatenate the batches across features dimension
                 final_states = torch.cat([normal_merged_states, reversed_merged_states], dim=1)
         else:
-            final_states = self.merging_strategy(states, lengths, texts)
+            final_states = self.merging_strategy(states, lengths, texts, additional_fts)
 
         return final_states
 
@@ -231,6 +235,10 @@ class EchoStateNetwork(nn.Module):
             if callable(self.reservoir.embedding):  # HuggingFace
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
+                if 'additional_fts' in batch.keys():
+                    additional_fts = batch["additional_fts"].to(self.device)
+                else:
+                    additional_fts = None
             else:                                   # TorchText
                 batch_text = batch.text
                 batch_label = batch.label
@@ -250,7 +258,8 @@ class EchoStateNetwork(nn.Module):
                 labels = mat.duplicate_labels(labels, lengths)
 
             # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text, reversed_states)
+            final_states = self._apply_merge_strategy(states, lengths, batch_text, 
+                                                      reversed_states, additional_fts)
 
             states_l.append(final_states)
             labels_l.append(labels)
@@ -299,6 +308,10 @@ class EchoStateNetwork(nn.Module):
                 if callable(self.reservoir.embedding):  # HuggingFace
                     batch_text = batch
                     batch_label = batch["labels"].to(self.device)
+                    if 'additional_fts' in batch.keys():
+                        additional_fts = batch["additional_fts"].to(self.device)
+                    else:
+                        additional_fts = None
                 else:                                   # TorchText
                     batch_text = batch.text
                     batch_label = batch.label
@@ -317,7 +330,8 @@ class EchoStateNetwork(nn.Module):
                     labels = mat.duplicate_labels(labels, lengths)
 
                 # apply the correct merging strategy and bi-directionality if needed.
-                final_states = self._apply_merge_strategy(states, lengths, batch_text, reversed_states)
+                final_states = self._apply_merge_strategy(states, lengths, batch_text, 
+                                                          reversed_states, additional_fts)
 
                 outputs = self.learning_algo(final_states)              # outputs
 
@@ -364,7 +378,9 @@ class EchoStateNetwork(nn.Module):
 
         # Closed-form training (for RR, RF)
         if isinstance(self.learning_algo, la.RidgeRegression) or \
-                isinstance(self.learning_algo, la.LogisticRegression2):
+            isinstance(self.learning_algo, la.RidgeRegression2) or \
+            isinstance(self.learning_algo, la.LogisticRegression2) or \
+            isinstance(self.learning_algo, la.LinearSVC):
 
             return self._fit_direct(train_dataloader)
 
@@ -416,8 +432,10 @@ class EchoStateNetwork(nn.Module):
             predictions = outputs.argmax(dim=1)
 
         else:                                                       # merging strategy is not None
-
-            outputs = raw_outputs.argmax(dim=1).float()
+            if raw_outputs.dim() != 1: # the learning algo returns the probas
+                outputs = raw_outputs.argmax(dim=1).float()
+            else:                      # the learning algo returns the classes
+                outputs = raw_outputs.float()
             predictions = outputs.type(torch.int64)
 
         return predictions
@@ -451,6 +469,10 @@ class EchoStateNetwork(nn.Module):
             if callable(self.reservoir.embedding):  # HuggingFace
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
+                if 'additional_fts' in batch.keys():
+                    additional_fts = batch["additional_fts"].to(self.device)
+                else:
+                    additional_fts = None
             else:                                   # TorchText
                 batch_text = batch.text
                 batch_label = batch.label
@@ -464,7 +486,8 @@ class EchoStateNetwork(nn.Module):
                 reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
 
             # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text, reversed_states)
+            final_states = self._apply_merge_strategy(states, lengths, batch_text, 
+                                                      reversed_states, additional_fts)
 
             predictions = self._compute_predictions(final_states, lengths)
             predictions_l.append(predictions.reshape(-1))
@@ -478,8 +501,8 @@ class EchoStateNetwork(nn.Module):
             # otherwise: pure prediction mode
             except Exception:
                 pass
-
-        accuracy = 100 * correct / float(total) if testing_mode else None
+        
+        accuracy = 100 * correct.item() / float(total) if testing_mode else None
         predictions_l = torch.cat(predictions_l, dim=0).cpu().detach().numpy()
 
         if verbose and testing_mode:
