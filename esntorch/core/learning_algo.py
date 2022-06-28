@@ -183,15 +183,11 @@ class RidgeRegression(torch.nn.Module):
 
         if self.mode == 'normalize':
             self.mean = X_.mean(dim=0)
-            # self.mean = X_.mean(dim=1)[:, None]
             self.L2norm = X_.norm(p='fro', dim=0)
-            # self.L2norm = X_.norm(p='fro', dim=1)[:, None]
             X_ = torch.div(X_ - self.mean, self.L2norm)
         elif self.mode == 'standardize':
             self.mean = X_.mean(dim=0)
-            # self.mean = X_.mean(dim=1)[:, None]
             self.std = X_.std(dim=0)
-            # self.std = X_.std(dim=1)[:, None]
             X_ = torch.div(X_ - self.mean, self.std)
 
         y_ = torch.zeros(y.size()[0], torch.unique(y).size()[0], dtype=torch.float32, device=device)
