@@ -82,13 +82,11 @@ class MergingStrategy:
             2D tensor containing merged ESN states (batch size x reservoir dim).
         """
 
-        merged_states = self.merge_batch(states, lengths, texts, 
-                                         self.merging_strategy, self.weights, additional_fts)
+        merged_states = self.merge_batch(states, lengths, texts, self.merging_strategy, self.weights, additional_fts)
 
         return merged_states
 
-    def merge_batch(self, states_batch, lengths, texts, 
-                    merging_strategy=None, weights=None, additional_fts=None):
+    def merge_batch(self, states_batch, lengths, texts, merging_strategy=None, weights=None, additional_fts=None):
         """
         Implements the different merging strategies: None, 'first', 'last', 'mean', 'weighted'.
 
@@ -105,7 +103,7 @@ class MergingStrategy:
         weights : None, torch.Tensor
             2D tensor containing the weights for each state (batch size x max text length).
         additional_fts : None, torch.Tensor
-            2D tensor containing new features (e.g. tf-idf) 
+            2D tensor containing new features (e.g. tf-idf) \
             to be concatenated to each merged state (batch size x dim additional_fts).
 
         Returns
@@ -168,14 +166,14 @@ class MergingStrategy:
             merged_states /= weights.sum(dim=0)[:, None]
             # option 2
             # merged_states /= lengths.unsqueeze(1).repeat(1, states_batch.size()[2])
-        
+
         # 'mean_and_additional_fts': takes the mean of ESN states and concatenates new features
         elif merging_strategy == "mean_and_additional_fts":
             lengths = lengths.expand(states_batch.size()[2], -1).transpose(0, 1)
             merged_states = torch.div(torch.sum(states_batch, dim=1), lengths)
             if additional_fts is not None:
                 merged_states = torch.cat([merged_states, additional_fts], dim=1)
-        
+
         else:
             raise Exception('Unknown merging strategy used')
 
