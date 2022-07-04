@@ -21,116 +21,7 @@
 import torch
 from sklearn.linear_model import LogisticRegression as LogisticRegression_
 from sklearn.linear_model import RidgeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import LinearSVC as LinearSVC_
-
-
-class LogisticRegression(torch.nn.Module):
-    """
-    Implements classical logistic regression as a 1-layer neural network.
-
-    Parameters
-    ----------
-    input_dim : int
-       Input dimension.
-    output_dim : int
-       Output dimension.
-    """
-
-    # Constructor
-    def __init__(self, input_dim, output_dim):
-        """
-        Parameters
-        ----------
-        input_dim : int
-        output_dim : int
-        """
-
-        super(LogisticRegression, self).__init__()
-
-        self.linear = torch.nn.Linear(input_dim, output_dim)
-
-    # Forward function
-    def forward(self, x):
-        """
-        Implements forward pass.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Tensor of features (gathered by rows).
-
-        Returns
-        -------
-        outputs : torch.Tensor
-            Tensor of outputs (gathered by row).
-        """
-
-        outputs = self.linear(x)
-
-        return outputs
-
-
-class DeepNN(torch.nn.Module):
-    """
-    Implements a deep neural network whose layers are specified by a list.
-    Make sure the the dimensions of the first and last layers
-    correspond to the input and output dimensions, respectively.
-    Example: A 2-hidden layer NN with 50 neurons in each layer and input / output dimensions of 300 / 3
-    is implemented as follows: layers_l = [300, 50, 50, 3]; model = DeepNN(layers_l).
-
-    Parameters
-    ----------
-    layers_l : list
-       List of integers representing the number on neurons in each layer.
-    """
-
-    # Constructor
-    def __init__(self, layers_l):
-        """
-        Parameters
-        ----------
-        layers_l : list
-        """
-
-        super(DeepNN, self).__init__()
-
-        self.hidden = torch.nn.ModuleList()
-
-        for input_size, output_size in zip(layers_l, layers_l[1:]):
-            self.hidden.append(torch.nn.Linear(input_size, output_size))
-
-    # Forward function
-    def forward(self, activation):
-        """
-        Implements forward pass (with ReLU activation function for the hidden layers).
-
-        Parameters
-        ----------
-        activation : torch.Tensor
-            Activation values of the input layer neurons: (batch size x input dim).
-
-        Returns
-        -------
-        activation : torch.Tensor
-            Activation values of the output layer neurons: (batch size x output dim).
-        """
-
-        nb_layers = len(self.hidden)
-
-        for (l, linear_transform) in zip(range(nb_layers), self.hidden):
-
-            # ReLU activation function for hidden layers
-            if l < nb_layers - 1:
-                activation = torch.nn.functional.relu(linear_transform(activation))
-                activation = torch.nn.Dropout(0.5)(activation)
-            else:
-                # activation = torch.nn.functional.tanh(linear_transform(activation))
-                activation = linear_transform(activation)
-
-        return activation
 
 
 class RidgeRegression(torch.nn.Module):
@@ -200,7 +91,7 @@ class RidgeRegression(torch.nn.Module):
         LI = torch.eye(X_.size()[1], device=device) * self.alpha
         Xt = torch.transpose(X_, 0, 1)
         beta = torch.mm(Xt, X_) + LI
-        beta = torch.pinverse(beta)     # use torch.pinverse() to compute pseudo-inverse via SVD.
+        beta = torch.pinverse(beta)  # use torch.pinverse() to compute pseudo-inverse via SVD.
         beta = torch.mm(beta, Xt)
         beta = torch.mm(beta, y_)
 
@@ -236,7 +127,7 @@ class RidgeRegression(torch.nn.Module):
 
         return outputs
 
-    
+
 class RidgeRegression2:
     """
     Implements Ridge Regression from scikit learn.
@@ -280,7 +171,7 @@ class RidgeRegression2:
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-        
+
         device = torch.device('cuda' if X.is_cuda else 'cpu')
         if device.type == 'cuda':
             X = X.cpu()
@@ -313,65 +204,51 @@ class RidgeRegression2:
         outputs = self.RR.predict(X)
         outputs = torch.from_numpy(outputs).to(device)
 
-        return outputs    
+        return outputs
 
 
-class RandomForest:
+class LinearSVC:
     """
-    Implements Random Forest algorithm from scikit learn:
+    Implements Linear Support Vector Machine Classifier from scikit learn.
 
     Parameters
     ----------
-        Same parameters as those of sklearn.ensemble.RandomForestClassifier
+        Same parameters as those of sklearn.svm.LinearSVC:
+        https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
     """
 
     # Constructor
     def __init__(self,
-                 n_estimators=100, *,
-                 criterion="gini",
-                 max_depth=None,
-                 min_samples_split=2,
-                 min_samples_leaf=1,
-                 min_weight_fraction_leaf=0.,
-                 max_features="auto",
-                 max_leaf_nodes=None,
-                 min_impurity_decrease=0.,
-                 min_impurity_split=None,
-                 bootstrap=True,
-                 oob_score=False,
-                 n_jobs=None,
-                 random_state=None,
-                 verbose=0,
-                 warm_start=False,
+                 penalty='l2',
+                 loss='squared_hinge',
+                 *, dual=True,
+                 tol=0.0001,
+                 C=1.0,
+                 multi_class='ovr',
+                 fit_intercept=True,
+                 intercept_scaling=1,
                  class_weight=None,
-                 ccp_alpha=0.0,
-                 max_samples=None):
+                 verbose=0,
+                 random_state=None,
+                 max_iter=1000):
 
-        self.RF = RandomForestClassifier(
-            n_estimators=n_estimators,
-            criterion=criterion,
-            max_depth=max_depth,
-            min_samples_split=min_samples_split,
-            min_samples_leaf=min_samples_leaf,
-            min_weight_fraction_leaf=min_weight_fraction_leaf,
-            max_features=max_features,
-            max_leaf_nodes=max_leaf_nodes,
-            min_impurity_decrease=min_impurity_decrease,
-            min_impurity_split=min_impurity_split,
-            bootstrap=bootstrap,
-            oob_score=oob_score,
-            n_jobs=n_jobs,
-            random_state=random_state,
-            verbose=verbose,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            ccp_alpha=ccp_alpha,
-            max_samples=max_samples)
+        self.SVC = LinearSVC_(penalty=penalty,
+                              loss=loss,
+                              dual=dual,
+                              tol=tol,
+                              C=C,
+                              multi_class=multi_class,
+                              fit_intercept=fit_intercept,
+                              intercept_scaling=intercept_scaling,
+                              class_weight=class_weight,
+                              verbose=verbose,
+                              random_state=random_state,
+                              max_iter=max_iter)
 
     def fit(self, X, y):
         """
-        Overrides fit method of RandomForestClassifier.
-        Simply convert torch tensors into numpy and apply original fit method.
+        Overrides fit method of LinearSVC.
+        Simply convert torch tensors into numpy arrays and apply original fit method.
 
         Parameters
         ----------
@@ -381,15 +258,19 @@ class RandomForest:
             Tensor of targets (gathered by rows).
         """
 
+        device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
+            y = y.cpu()
         X = X.numpy()
         y = y.numpy()
-        self.RF.fit(X, y)
+        self.SVC.fit(X, y)
 
     # Override parentheses method
     def __call__(self, X):
         """
-        Overrides parentheses method by predict method of RandomForestClassifier.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
+        Overrides parentheses method by predict method of LinearSVC.
+        Simply convert torch tensors into numpy arrays and apply original predict_proba method.
 
         Parameters
         ----------
@@ -403,123 +284,57 @@ class RandomForest:
         """
 
         device = torch.device('cuda' if X.is_cuda else 'cpu')
+        if device.type == 'cuda':
+            X = X.cpu()
         X = X.numpy()
-        outputs = self.RF.predict_proba(X)
+        outputs = self.SVC.predict(X)
         outputs = torch.from_numpy(outputs).to(device)
 
         return outputs
 
 
-class MultinomialNBLayer:
+class LogisticRegression(torch.nn.Module):
     """
-    Implements Multinomial Naive Bayes algorithm from scikit learn.
-    Don't use it with negative data.
+    Implements classical logistic regression as a 1-layer neural network.
 
     Parameters
     ----------
-        Same parameters as those of sklearn.naive_bayes.MultinomialNB
+    input_dim : int
+       Input dimension.
+    output_dim : int
+       Output dimension.
     """
 
     # Constructor
-    def __init__(self, *, alpha=1.0, fit_prior=True, class_prior=None):
-
-        self.NB = MultinomialNB(alpha=alpha, fit_prior=fit_prior, class_prior=class_prior)
-
-    def fit(self, X, y):
+    def __init__(self, input_dim, output_dim):
         """
-        Overrides fit method of MultinomialNB.
-        Simply convert torch tensors into numpy and apply original fit method.
+        Parameters
+        ----------
+        input_dim : int
+        output_dim : int
+        """
+
+        super(LogisticRegression, self).__init__()
+
+        self.linear = torch.nn.Linear(input_dim, output_dim)
+
+    # Forward function
+    def forward(self, x):
+        """
+        Implements forward pass.
 
         Parameters
         ----------
-        X : torch.Tensor
-            Tensor of features (gathered by rows).
-        y : torch.Tensor
-            Tensor of targets (gathered by rows).
-        """
-
-        X = X.numpy()
-        y = y.numpy()
-        self.NB.fit(X, y)
-
-    # Override parentheses method
-    def __call__(self, X):
-        """
-        Overrides parentheses method by predict method of MultinomialNB.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
-
-        Parameters
-        ----------
-        X : torch.Tensor
+        x : torch.Tensor
             Tensor of features (gathered by rows).
 
         Returns
         -------
         outputs : torch.Tensor
-            Outputs of Ridge regression
+            Tensor of outputs (gathered by row).
         """
 
-        device = torch.device('cuda' if X.is_cuda else 'cpu')
-        X = X.numpy()
-        outputs = self.NB.predict_proba(X)
-        outputs = torch.from_numpy(outputs).to(device)
-
-        return outputs
-
-
-class GaussianNBLayer:
-    """
-    Implements Gaussian Naive Bayes algorithm from scikit learn.
-    Don't use it with negative data.
-
-    Parameters
-    ----------
-        Same parameters as those of sklearn.naive_bayes.GaussianNB
-    """
-
-    # Constructor
-    def __init__(self, *, priors=None, var_smoothing=1e-09):
-
-        self.NB = GaussianNB(priors=priors, var_smoothing=var_smoothing)
-
-    def fit(self, X, y):
-        """
-        Overrides fit method of GaussianNB.
-        Simply convert torch tensors into numpy and apply original fit method.
-
-        Parameters
-        ----------
-        X : torch.Tensor
-            Tensor of features (gathered by rows).
-        y : torch.Tensor
-            Tensor of targets (gathered by rows).
-        """
-
-        X = X.numpy()
-        y = y.numpy()
-        self.NB.fit(X, y)
-
-    # Override parentheses method
-    def __call__(self, X):
-        """
-        Overrides parentheses method by predict method of MultinomialNB.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
-
-        Parameters
-        ----------
-        X : torch.Tensor
-            Tensor of features (gathered by rows).
-
-        Returns
-        -------
-        outputs : torch.Tensor
-            Outputs of Ridge regression
-        """
-
-        device = torch.device('cuda' if X.is_cuda else 'cpu')
-        X = X.numpy()
-        outputs = self.NB.predict_proba(X)
-        outputs = torch.from_numpy(outputs).to(device)
+        outputs = self.linear(x)
 
         return outputs
 
@@ -579,7 +394,7 @@ class LogisticRegression2:
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-        
+
         device = torch.device('cuda' if X.is_cuda else 'cpu')
         if device.type == 'cuda':
             X = X.cpu()
@@ -615,87 +430,61 @@ class LogisticRegression2:
         return outputs
 
 
-class LinearSVC:
+class DeepNN(torch.nn.Module):
     """
-    Implements Linear Support Vector Machine Classifier from scikit learn.
+    Implements a deep neural network whose layers are specified by a list.
+    Make sure the the dimensions of the first and last layers
+    correspond to the input and output dimensions, respectively.
+    Example: A 2-hidden layer NN with 50 neurons in each layer and input / output dimensions of 300 / 3
+    is implemented as follows: layers_l = [300, 50, 50, 3]; model = DeepNN(layers_l).
 
     Parameters
     ----------
-        Same parameters as those of sklearn.svm.LinearSVC:
-        https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
+    layers_l : list
+       List of integers representing the number on neurons in each layer.
     """
 
     # Constructor
-    def __init__(self,
-                 penalty='l2',
-                 loss='squared_hinge',
-                 *, dual=True,
-                 tol=0.0001,
-                 C=1.0,
-                 multi_class='ovr',
-                 fit_intercept=True,
-                 intercept_scaling=1,
-                 class_weight=None,
-                 verbose=0,
-                 random_state=None,
-                 max_iter=1000):
-
-        self.SVC = LinearSVC_(penalty=penalty,
-                              loss=loss,
-                              dual=dual,
-                              tol=tol,
-                              C=C,
-                              multi_class=multi_class,
-                              fit_intercept=fit_intercept,
-                              intercept_scaling=intercept_scaling,
-                              class_weight=class_weight,
-                              verbose=verbose,
-                              random_state=random_state,
-                              max_iter=max_iter)
- 
-    def fit(self, X, y):
+    def __init__(self, layers_l):
         """
-        Overrides fit method of LinearSVC.
-        Simply convert torch tensors into numpy arrays and apply original fit method.
+        Parameters
+        ----------
+        layers_l : list
+        """
+
+        super(DeepNN, self).__init__()
+
+        self.hidden = torch.nn.ModuleList()
+
+        for input_size, output_size in zip(layers_l, layers_l[1:]):
+            self.hidden.append(torch.nn.Linear(input_size, output_size))
+
+    # Forward function
+    def forward(self, activation):
+        """
+        Implements forward pass (with ReLU activation function for the hidden layers).
 
         Parameters
         ----------
-        X : torch.Tensor
-            Tensor of features (gathered by rows).
-        y : torch.Tensor
-            Tensor of targets (gathered by rows).
-        """
-        
-        device = torch.device('cuda' if X.is_cuda else 'cpu')
-        if device.type == 'cuda':
-            X = X.cpu()
-            y = y.cpu()
-        X = X.numpy()
-        y = y.numpy()
-        self.SVC.fit(X, y)
-
-    # Override parentheses method
-    def __call__(self, X):
-        """
-        Overrides parentheses method by predict method of LinearSVC.
-        Simply convert torch tensors into numpy arrays and apply original predict_proba method.
-
-        Parameters
-        ----------
-        X : torch.Tensor
-            Tensor of features (gathered by rows).
+        activation : torch.Tensor
+            Activation values of the input layer neurons: (batch size x input dim).
 
         Returns
         -------
-        outputs : torch.Tensor
-            Outputs of Ridge regression
+        activation : torch.Tensor
+            Activation values of the output layer neurons: (batch size x output dim).
         """
 
-        device = torch.device('cuda' if X.is_cuda else 'cpu')
-        if device.type == 'cuda':
-            X = X.cpu()
-        X = X.numpy()
-        outputs = self.SVC.predict(X)
-        outputs = torch.from_numpy(outputs).to(device)
+        nb_layers = len(self.hidden)
 
-        return outputs
+        for (l, linear_transform) in zip(range(nb_layers), self.hidden):
+
+            # ReLU activation function for hidden layers
+            if l < nb_layers - 1:
+                activation = torch.nn.functional.relu(linear_transform(activation))
+                activation = torch.nn.Dropout(0.5)(activation)
+            else:
+                # activation = torch.nn.functional.tanh(linear_transform(activation))
+                activation = linear_transform(activation)
+
+        return activation
