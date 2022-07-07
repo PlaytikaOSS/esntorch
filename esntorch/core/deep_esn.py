@@ -26,7 +26,7 @@ import esntorch.core.esn as esn
 class DeepEchoStateNetwork(esn.EchoStateNetwork):
     """
     Implements the Deep Echo State Network (BS) per se.
-    An Deep ESN consists of the combination of many reservoir, a merging strategy and a learning algorithm.
+    An Deep ESN consists of the combination of many reservoirs, a merging strategy and a learning algorithm.
 
     Parameters
     ----------

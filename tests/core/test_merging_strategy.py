@@ -32,8 +32,9 @@
 # *** END INSTRUCTIONS ***
 import torch
 
-from esntorch.core.merging_strategy import *
+from esntorch.core.merging_strategy import MergingStrategy
 import pytest
+
 
 def test_init():
     """Tests the __init__ method."""
@@ -82,7 +83,7 @@ def test_merge_batch():
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        assert torch.all(x[i, :] == states[i, l-1, :])
+        assert torch.all(x[i, :] == states[i, l - 1, :])
 
     # Test merging strategy 'mean'
     m = MergingStrategy(merging_strategy='mean')
@@ -97,7 +98,7 @@ def test_merge_batch():
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        mean_state = torch.vstack([states[i, j, :]*weights[i, j] for j in range(l)])
+        mean_state = torch.vstack([states[i, j, :] * weights[i, j] for j in range(l)])
         mean_state = torch.sum(mean_state, dim=0) / l
         diff = torch.all(x[i, :] == mean_state)
         assert pytest.approx(diff, 0.0001)
@@ -108,7 +109,7 @@ def test_merge_batch():
     weights = lexicon[texts].transpose(0, 1)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        mean_state = torch.vstack([states[i, j, :]*weights[i, j] for j in range(l)])
+        mean_state = torch.vstack([states[i, j, :] * weights[i, j] for j in range(l)])
         mean_state = torch.sum(mean_state, dim=0) / weights.sum(dim=1)[i]
         diff = torch.all(x[i, :] == mean_state)
         assert pytest.approx(diff, 0.0001)

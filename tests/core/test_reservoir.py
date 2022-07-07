@@ -30,6 +30,7 @@
 # To launch all tests inside /esntorch/core/ with line coverage, run the following command:
 # pytest --cov tests/core/
 # *** END INSTRUCTIONS ***
+
 import torch
 from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
@@ -38,9 +39,6 @@ import esntorch.core.learning_algo as la
 import esntorch.core.esn as esn
 import pytest
 
-
-# We train an ESN with the different learning algorithms on 20% of the TREC dataset.
-# We test whether the train and test perfromance is higher than 70%.
 
 @pytest.fixture()
 def create_dataset():
@@ -98,7 +96,7 @@ def create_dataset():
     return dataset_d, dataloader_d
 
 
-def train_esn(dataset_d, dataloader_d, learning_algo=None):
+def instantiate_esn(mode=None, distribution=None):
     """Train ESN with a designated learning algorithm."""
 
     # Device
@@ -107,12 +105,12 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'distribution': 'uniform',  # uniform, gaussian
+        'distribution': distribution,  # uniform, gaussian
         'input_dim': 768,  # dim of BERT encoding!
         'reservoir_dim': 1000,
         'bias_scaling': 0.,  # 1.0742377381236705,
         'sparsity': 0.,
-        'spectral_radius': 0.7094538192983408,
+        'spectral_radius': None,  # 0.7094538192983408,
         'leaking_rate': 0.17647315261153904,
         'activation_function': 'relu',
         'input_scaling': 0.1,
@@ -124,7 +122,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
-        'mode': 'esn',  # 'no_layer, 'linear_layer'
+        'mode': mode,  # 'no_layer, 'linear_layer'
         'seed': 42345
     }
 
@@ -132,22 +130,15 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     ESN = esn.EchoStateNetwork(**esn_params)
 
     # Define the learning algo of the ESN
-    if learning_algo == 'ridge':
-        ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
-    elif learning_algo == 'ridge_skl':
-        ESN.learning_algo = la.RidgeRegression2(alpha=7.843536845714804)
-    elif learning_algo == 'svc':
-        ESN.learning_algo = la.LinearSVC()
-    elif learning_algo == 'logistic':
-        ESN.learning_algo = la.LogisticRegression(input_dim=esn_params['reservoir_dim'], output_dim=6)
-        ESN.criterion = torch.nn.CrossEntropyLoss()
-        ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
-    elif learning_algo == 'logistic_skl':
-        ESN.learning_algo = la.LogisticRegression2()
+    ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
 
     # Put the ESN on the device (CPU or GPU)
     ESN = ESN.to(device)
 
+    return ESN
+
+
+def warm_up(ESN, dataset_d):
     # Warm up the ESN on multiple sentences
     nb_sentences = 10
 
@@ -159,47 +150,57 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         for sentence in dataloader_tmp:
             ESN.warm_up(sentence)
 
-    # Training
-    # training the ESN
-    ESN.fit(dataloader_d["train"], epochs=3, iter_steps=10)  # Parameter epochs used only with LogisticRegression
 
-    # Results
-    # Train predictions and accuracy
-    train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    train_acc = train_acc.item() if device.type == 'cuda' else train_acc
-
-    # Test predictions and accuracy
-    test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
-    test_acc = test_acc.item() if device.type == 'cuda' else test_acc
-
-    return train_acc, test_acc
+def test_UniformReservoir():
+    # test uniform distribution
+    mode, distribution = 'esn', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    reservoir = ESN.reservoir
+    weights = reservoir.reservoir_w.view(-1)
+    # assert reservoir dim
+    assert reservoir.reservoir_w.shape == (reservoir.reservoir_dim, reservoir.reservoir_dim)
+    # assert uniform distribution
+    for i in range(5):
+        assert torch.sum(weights <= -1 + i * 2 / 5) == pytest.approx(i / 5 * reservoir.reservoir_dim ** 2, 0.05)
 
 
-def test_RidgeRegression_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge')
-    assert train_acc > 0.8 and test_acc > 0.8
+def test_GaussianReservoir():
+    # test gaussian distribution
+    mode, distribution = 'esn', 'gaussian'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    reservoir = ESN.reservoir
+    weights = reservoir.reservoir_w.view(-1)
+    assert torch.mean(weights) == pytest.approx(reservoir.mean, abs=0.05)
+    assert torch.std(weights) == pytest.approx(reservoir.std, 0.05)
 
 
-def test_RidgeRegression2_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
+def test_linear_layer():
+    # test linear layer
+    mode, distribution = 'linear_layer', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    reservoir = ESN.reservoir
+    weights = vars(reservoir).get('reservoir_w', None)
+    assert weights is None
+    input_w = reservoir.input_w if hasattr(reservoir, 'input_w') else None
+    assert input_w is not None
+    assert input_w.shape[0] == reservoir.reservoir_dim
 
 
-def test_LogisticRegression_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic')
-    assert train_acc > 0.8 and test_acc > 0.8
+def test_no_layer():
+    # test no layer
+    mode, distribution = 'no_layer', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    reservoir = ESN.reservoir
+    weights = vars(reservoir).get('reservoir_w', None)
+    assert weights is None
 
 
-def test_LogisticRegression2_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
-
-
-def test_SVC_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='svc')
-    assert train_acc > 0.8 and test_acc > 0.8
+def test_warm_up(create_dataset):
+    mode, distribution = 'esn', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    initial_state = ESN.reservoir.initial_state
+    dataset_d, _ = create_dataset
+    warm_up(ESN, dataset_d)
+    warm_state = ESN.reservoir.initial_state
+    print(initial_state, warm_state)
+    assert (initial_state != warm_state).any()
