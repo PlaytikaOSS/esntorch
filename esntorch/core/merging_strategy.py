@@ -70,7 +70,7 @@ class MergingStrategy:
         Parameters
         ----------
         states : torch.Tensor
-            3D tensor containing the ESN states: (batch size x  max text length x reservoir dim).
+            3D tensor containing the ESN states: (batch size x  max text length x layer dim).
         lengths : torch.Tensor
             1D tensor of containing text lengths: (batch size).
         texts: torch.Tensor
@@ -79,7 +79,7 @@ class MergingStrategy:
         Returns
         -------
         merged_states : torch.Tensor
-            2D tensor containing merged ESN states (batch size x reservoir dim).
+            2D tensor containing merged ESN states (batch size x layer dim).
         """
 
         merged_states = self.merge_batch(states, lengths, texts, self.merging_strategy, self.weights, additional_fts)
@@ -93,7 +93,7 @@ class MergingStrategy:
         Parameters
         ----------
         states_batch : torch.Tensor
-             3D tensor containing the ESN states: (batch size x max text length x reservoir dim).
+             3D tensor containing the ESN states: (batch size x max text length x layer dim).
         lengths : torch.Tensor
             1D tensor containing the length of each text in the batch: (batch size).
         texts: torch.Tensor
@@ -109,8 +109,8 @@ class MergingStrategy:
         Returns
         -------
         merged_states : torch.Tensor
-            If merging_strategy is not None, 2D tensor containing the merged states: (batch size x reservoir dim).
-            If merging_strategy is None, 2D tensor containing all states: (Sum_i len(state_i) x reservoir dim).
+            If merging_strategy is not None, 2D tensor containing the merged states: (batch size x layer dim).
+            If merging_strategy is None, 2D tensor containing all states: (Sum_i len(state_i) x layer dim).
         """
 
         # None: takes all (non-null) ESN states

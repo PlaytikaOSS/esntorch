@@ -96,7 +96,7 @@ def create_dataset():
     return dataset_d, dataloader_d
 
 
-def instantiate_esn(mode=None, distribution=None):
+def instantiate_esn(**kwargs):
     """Train ESN with a designated learning algorithm."""
 
     # Device
@@ -105,9 +105,8 @@ def instantiate_esn(mode=None, distribution=None):
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'distribution': distribution,  # uniform, gaussian
         'input_dim': 768,  # dim of BERT encoding!
-        'reservoir_dim': 1000,
+        'dim': 1000,
         'bias_scaling': 0.,  # 1.0742377381236705,
         'sparsity': 0.,
         'spectral_radius': None,  # 0.7094538192983408,
@@ -122,8 +121,8 @@ def instantiate_esn(mode=None, distribution=None):
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
-        'mode': mode,  # 'no_layer, 'linear_layer'
-        'seed': 42345
+        'seed': 42345,
+        **kwargs
     }
 
     # Instantiate the ESN
@@ -151,56 +150,72 @@ def warm_up(ESN, dataset_d):
             ESN.warm_up(sentence)
 
 
-def test_UniformReservoir():
-    # test uniform distribution
-    mode, distribution = 'esn', 'uniform'
-    ESN = instantiate_esn(mode=mode, distribution=distribution)
-    reservoir = ESN.reservoir
-    weights = reservoir.reservoir_w.view(-1)
-    # assert reservoir dim
-    assert reservoir.reservoir_w.shape == (reservoir.reservoir_dim, reservoir.reservoir_dim)
+def is_uniform(layer):
+    weights = layer.layer_w.view(-1)
+    # assert layer dim
+    assert layer.layer_w.shape == (layer.dim, layer.dim)
     # assert uniform distribution
     for i in range(5):
-        assert torch.sum(weights <= -1 + i * 2 / 5) == pytest.approx(i / 5 * reservoir.reservoir_dim ** 2, 0.05)
+        assert torch.sum(weights <= -1 + i * 2 / 5) == pytest.approx(i / 5 * layer.dim ** 2, 0.05)
+
+
+def is_gaussian(layer):
+    weights = layer.layer_w.view(-1)
+    assert torch.mean(weights) == pytest.approx(layer.mean, abs=0.05)
+    assert torch.std(weights) == pytest.approx(layer.std, 0.05)
+
+
+def test_UniformReservoir():
+    # test uniform distribution
+    mode, distribution = 'recurrent_layer', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    layer = ESN.layer
+    is_uniform(layer)
 
 
 def test_GaussianReservoir():
     # test gaussian distribution
-    mode, distribution = 'esn', 'gaussian'
+    mode, distribution = 'recurrent_layer', 'gaussian'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
-    reservoir = ESN.reservoir
-    weights = reservoir.reservoir_w.view(-1)
-    assert torch.mean(weights) == pytest.approx(reservoir.mean, abs=0.05)
-    assert torch.std(weights) == pytest.approx(reservoir.std, 0.05)
+    layer = ESN.layer
+    is_gaussian(layer)
 
 
 def test_linear_layer():
     # test linear layer
     mode, distribution = 'linear_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
-    reservoir = ESN.reservoir
-    weights = vars(reservoir).get('reservoir_w', None)
+    reservoir = ESN.layer
+    weights = vars(reservoir).get('layer_w', None)
     assert weights is None
     input_w = reservoir.input_w if hasattr(reservoir, 'input_w') else None
     assert input_w is not None
-    assert input_w.shape[0] == reservoir.reservoir_dim
+    assert input_w.shape[0] == reservoir.dim
 
 
 def test_no_layer():
     # test no layer
     mode, distribution = 'no_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
-    reservoir = ESN.reservoir
-    weights = vars(reservoir).get('reservoir_w', None)
+    reservoir = ESN.layer
+    weights = vars(reservoir).get('layer_w', None)
     assert weights is None
 
 
+def test_deep_layer():
+    # test deep layer
+    mode, distributions = ['recurrent_layer', 'recurrent_layer'], ['uniform', 'gaussian']
+    ESN = instantiate_esn(nb_layers=2, mode=mode, distribution=distributions, deep=True)
+    layers = ESN.layer.layers
+    is_uniform(layers[0])
+    is_gaussian(layers[1])
+
+
 def test_warm_up(create_dataset):
-    mode, distribution = 'esn', 'uniform'
+    mode, distribution = 'recurrent_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
-    initial_state = ESN.reservoir.initial_state
+    initial_state = ESN.layer.initial_state
     dataset_d, _ = create_dataset
     warm_up(ESN, dataset_d)
-    warm_state = ESN.reservoir.initial_state
-    print(initial_state, warm_state)
+    warm_state = ESN.layer.initial_state
     assert (initial_state != warm_state).any()

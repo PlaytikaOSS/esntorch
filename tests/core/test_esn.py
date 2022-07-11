@@ -38,9 +38,10 @@ import esntorch.core.learning_algo as la
 import esntorch.core.esn as esn
 import pytest
 
-
 # We train an ESN with the different learning algorithms on 20% of the TREC dataset.
 # We test whether the train and test perfromance is higher than 70%.
+import esntorch.core.merging_strategy
+
 
 @pytest.fixture()
 def create_dataset():
@@ -98,7 +99,7 @@ def create_dataset():
     return dataset_d, dataloader_d
 
 
-def train_esn(dataset_d, dataloader_d, learning_algo=None):
+def instantiate_esn(**kwargs):
     """Train ESN with a designated learning algorithm."""
 
     # Device
@@ -107,14 +108,13 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'distribution': 'uniform',  # uniform, gaussian
         'input_dim': 768,  # dim of BERT encoding!
         'dim': 1000,
         'bias_scaling': 0.,  # 1.0742377381236705,
         'sparsity': 0.,
-        'spectral_radius': 0.7094538192983408,
+        'spectral_radius': None,  # 0.7094538192983408,
         'leaking_rate': 0.17647315261153904,
-        'activation_function': 'relu',
+        'activation_function': 'tanh',
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
@@ -124,30 +124,23 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
-        'mode': 'esn',  # 'no_layer, 'linear_layer'
-        'seed': 42345
+        'seed': 42345,
+        **kwargs
     }
 
     # Instantiate the ESN
     ESN = esn.EchoStateNetwork(**esn_params)
 
     # Define the learning algo of the ESN
-    if learning_algo == 'ridge':
-        ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
-    elif learning_algo == 'ridge_skl':
-        ESN.learning_algo = la.RidgeRegression2(alpha=7.843536845714804)
-    elif learning_algo == 'svc':
-        ESN.learning_algo = la.LinearSVC()
-    elif learning_algo == 'logistic':
-        ESN.learning_algo = la.LogisticRegression(input_dim=esn_params['dim'], output_dim=6)
-        ESN.criterion = torch.nn.CrossEntropyLoss()
-        ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
-    elif learning_algo == 'logistic_skl':
-        ESN.learning_algo = la.LogisticRegression2()
+    ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
 
     # Put the ESN on the device (CPU or GPU)
     ESN = ESN.to(device)
 
+    return ESN
+
+
+def warm_up(ESN, dataset_d):
     # Warm up the ESN on multiple sentences
     nb_sentences = 10
 
@@ -159,47 +152,70 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         for sentence in dataloader_tmp:
             ESN.warm_up(sentence)
 
-    # Training
-    # training the ESN
-    ESN.fit(dataloader_d["train"], epochs=3, iter_steps=10)  # Parameter epochs used only with LogisticRegression
 
-    # Results
+def predict_esn(ESN, dataloader_d):
     # Train predictions and accuracy
+    print("Predict on train set")
     train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    train_acc = train_acc.item() if device.type == 'cuda' else train_acc
+    train_acc = train_acc.item() if ESN.device.type == 'cuda' else train_acc
 
     # Test predictions and accuracy
+    print("Predict on test set")
     test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
-    test_acc = test_acc.item() if device.type == 'cuda' else test_acc
+    test_acc = test_acc.item() if ESN.device.type == 'cuda' else test_acc
 
-    return train_acc, test_acc
+    return train_pred, train_acc, test_pred, test_acc
 
 
-def test_RidgeRegression_fit(create_dataset):
+def test_warm_up(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge')
-    assert train_acc > 0.8 and test_acc > 0.8
+    mode, distribution = 'recurrent_layer', 'uniform'
+    ESN = instantiate_esn(mode=mode, distribution=distribution)
+    initial_state = ESN.layer.initial_state
+    warm_up(ESN, dataset_d)
+    warm_state = ESN.layer.initial_state
+    assert (initial_state != warm_state).any()
 
 
-def test_RidgeRegression2_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
+def test_fit_and_predict(create_dataset):
+    def test(**kwargs):
+        if kwargs['deep']:
+            la_input_dim = kwargs['nb_layers'] * kwargs['dim']
+        else:
+            la_input_dim = kwargs['dim']
 
+        dataset_d, dataloader_d = create_dataset
+        ESN = instantiate_esn(**kwargs)
 
-def test_LogisticRegression_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic')
-    assert train_acc > 0.8 and test_acc > 0.8
+        # test fit via _fit_direct
+        ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
+        weights_before_fit = ESN.learning_algo.weights
+        assert weights_before_fit is None
+        ESN.fit(dataloader_d["train"])
+        weights_after_fit = ESN.learning_algo.weights
+        assert torch.is_tensor(weights_after_fit)
 
+        # test predict
+        train_pred, train_acc, test_pred, test_acc = predict_esn(ESN, dataloader_d)
+        assert len(train_pred) == len(dataset_d['train'])
+        assert len(test_pred) == len(dataset_d['test'])
+        assert test_acc > 0.8
 
-def test_LogisticRegression2_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
+        # test fit via _fit_GD
+        ESN.learning_algo = la.LogisticRegression(input_dim=la_input_dim, output_dim=6)
+        weights_before_fit = ESN.learning_algo.linear.weight.clone()
+        ESN.criterion = torch.nn.CrossEntropyLoss()
+        ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
+        ESN.fit(dataloader_d["train"], epochs=1, iter_steps=10)
+        weights_after_fit = ESN.learning_algo.linear.weight
+        print(weights_before_fit.shape, weights_after_fit.shape)
+        assert (weights_before_fit != weights_after_fit).any()
 
+        # test predict
+        train_pred, train_acc, test_pred, test_acc = predict_esn(ESN, dataloader_d)
+        assert len(train_pred) == len(dataset_d['train'])
+        assert len(test_pred) == len(dataset_d['test'])
+        assert test_acc > 0.8
 
-def test_SVC_fit(create_dataset):
-    dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='svc')
-    assert train_acc > 0.8 and test_acc > 0.8
+    test(deep=False, mode='recurrent_layer', distribution='uniform', dim=300)
+    test(deep=True, nb_layers=3, mode='recurrent_layer', distribution='uniform', dim=300)

@@ -87,7 +87,6 @@ class RidgeRegression(torch.nn.Module):
         # tmp lines to get X_ and y_
         self.X_ = X_
         self.y_ = y_
-
         LI = torch.eye(X_.size()[1], device=device) * self.alpha
         Xt = torch.transpose(X_, 0, 1)
         beta = torch.mm(Xt, X_) + LI

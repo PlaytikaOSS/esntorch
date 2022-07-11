@@ -26,12 +26,28 @@ from torch.autograd import Variable
 
 
 class Layer(nn.Module):
+    """
+    Implements a Layer of a network. A layer is composed of an embedding and a forward method.
+    This is a base class for more complex layer, like LayerLinear or LayerRecurrent.
+
+    Parameters
+    ----------
+    embedding_weights : torch.Tensor
+        Embedding matrix.
+    seed : torch._C.Generator
+        Random seed.
+    device: torch.device
+        Device gpu or cpu.
+    """
+
     def __init__(self,
                  embedding_weights=None,
                  seed=42,
                  device=torch.device('cpu'),
                  **kwargs):
+
         super().__init__()
+
         torch.manual_seed(seed)
         self.device = device
 
@@ -55,16 +71,28 @@ class Layer(nn.Module):
             self.embedding = None
 
     def _embed(self, batch):
+
+        print("\n")
+
         if callable(self.embedding):
+            print("EMB: embedded_inputs before embedding", batch["input_ids"].shape)
             batch_size = int(batch["input_ids"].shape[0])
             # Ignore the first [CLS] and the last [SEP] tokens (hence lengths - 2)
             lengths = batch["lengths"].to(self.device) - 2
             embedded_inputs = self.embedding(batch)
             embedded_inputs = embedded_inputs[1:, :, :]  # Ignore [CLS]
         else:
-            batch_size = int(batch.size()[0])
-            lengths = batch.sum(dim=2).shape[1] - (batch.sum(dim=2) == 0.0).sum(dim=1)
-            embedded_inputs = torch.transpose(batch, 0, 1)
+            print("NON EMB: embedded_inputs before embedding", batch.shape)
+            # batch_size = int(batch.size()[0])
+            batch_size = int(batch.shape[1])  # XXX
+            # lengths = batch.sum(dim=2).shape[1] - (batch.sum(dim=2) == 0.0).sum(dim=1)
+            lengths = (batch.sum(dim=2) != 0.0).sum(dim=0)  # XXX
+            embedded_inputs = batch  # torch.transpose(batch, 0, 1) # XXX
+
+        print("embedded_inputs after embedding", embedded_inputs.shape)
+        print("lengths after embedding", lengths.shape)
+        print("\n")
+
         return batch_size, lengths, embedded_inputs
 
     def _forward(self, batch_size, lengths, embedded_inputs):
@@ -82,12 +110,12 @@ class Layer(nn.Module):
         for i, l in enumerate(batch["lengths"]):
             batch_rev["input_ids"][i, :l] = torch.flip(batch["input_ids"][i, :l], dims=[0])
 
-        # make the reversed batch go through the reservoir
+        # make the reversed batch go through the layer
         return self.forward(batch_rev)
 
-    def warm_up(self, warm_up_sequence, mode=None):
+    def warm_up(self, warm_up_sequence, return_states=False):
         """
-        Performs forward pass of an input sequence and set last reservoir state as new initial state.
+        Performs forward pass of an input sequence and set last layer state as new initial state.
 
         Parameters
         ----------
@@ -99,18 +127,18 @@ class Layer(nn.Module):
             # Add a first dimension to sequence to match 2D input batch format
             warm_up_sequence = warm_up_sequence.unsqueeze(1)
 
-        # Process text into the reservoir
+        # Process text into the layer
         warm_states, warm_sentence_length = self.forward(warm_up_sequence)
         # Remove first dimension and take last valid state
         self.initial_state = warm_states[0, warm_sentence_length - 1, :].reshape(-1)
 
-        if mode == 'return_states':
-            self.warm_states = warm_states
+        if return_states:
+            return warm_states
 
 
 class LayerLinear(Layer):
     """
-    Implements the reservoir of an echo state network (ESN).
+    Implements the layer of an echo state network (ESN).
     The required parameters are self-explanatory.
 
     Parameters
@@ -119,15 +147,15 @@ class LayerLinear(Layer):
         Embedding matrix.
     input_dim : int
         Input dimension.
-    reservoir_dim : int
+    dim : int
         Reservoir dimension.
     bias_scaling : float
         Bias scaling: bounds used for the bias random generation.
     leaking_rate : float
-        Leaking rate of the reservoir (between 0 and 1).
+        Leaking rate of the layer (between 0 and 1).
         Determines the amount of last state and current input involved in the current state updating.
     activation_function : str
-        Activation function of the reservoir cells ('tanh' by default).
+        Activation function of the layer cells ('tanh' by default).
     seed : torch._C.Generator
         Random seed.
     device: torch.device
@@ -139,7 +167,7 @@ class LayerLinear(Layer):
                  embedding_weights=None,
                  input_dim=None,
                  input_scaling=None,
-                 reservoir_dim=None,
+                 dim=None,
                  bias_scaling=None,
                  activation_function='tanh',
                  seed=42,
@@ -153,9 +181,9 @@ class LayerLinear(Layer):
         self.input_scaling = input_scaling
         self.bias_scaling = bias_scaling
 
-        # Input and reservoir dim
+        # Input and layer dim
         self.input_dim = input_dim
-        self.reservoir_dim = reservoir_dim
+        self.dim = dim
 
         # Activation function
         if activation_function == 'tanh':
@@ -166,40 +194,41 @@ class LayerLinear(Layer):
             print("Activation function unknown...")
             self.activation_function = None
 
-        input_w = mat.generate_uniform_matrix(size=(self.reservoir_dim, self.input_dim),
+        input_w = mat.generate_uniform_matrix(size=(self.dim, self.input_dim),
                                               scaling=self.input_scaling)
         input_w = Variable(input_w, requires_grad=False)
         self.register_buffer('input_w', input_w)
 
         # Bias
         if self.bias_scaling is not None:
-            bias = mat.generate_uniform_matrix(size=(1, self.reservoir_dim),
+            bias = mat.generate_uniform_matrix(size=(1, self.dim),
                                                scaling=self.bias_scaling).flatten()
         else:
-            bias = torch.zeros(size=(1, self.reservoir_dim)).flatten()
+            bias = torch.zeros(size=(1, self.dim)).flatten()
         bias = Variable(bias, requires_grad=False)
         self.register_buffer('bias', bias)
 
         # Initial_state
-        self.register_buffer('initial_state', torch.rand(self.reservoir_dim, requires_grad=False))
+        self.register_buffer('initial_state', torch.rand(self.dim, requires_grad=False))
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
         Implements the processing of a batch of input texts into a linear layer \
-        of same dimension as the reservoir.
+        of same dimension as the layer.
         This is the so-called "Custom Baseline" (EMB + LINEAR_LAYER + LA).
 
         Parameters
         ----------
-        embedded_inputs : torch.Tensor
-            embedded_inputs : 3D tensor (batch_size x max_length x reservoir_dim).
-            Embedded inputs is the 3D tensor obtained after embedding the batch of input tokens.
-            Note that the embeddings of the tokens [CLS] and [SEP] generated by
-            the Hugging Face tokenizer are discarded from the embedded_inputs tensor.
+        batch_size : int
+            Batch size.
         lengths : torch.Tensor
             lengths : 1D tensor (batch_size).
             Lengths of input texts in the batch.
-        batch_size : int
+        embedded_inputs : torch.Tensor
+            embedded_inputs : 3D tensor (batch_size x max_length x dim).
+            Embedded inputs is the 3D tensor obtained after embedding the batch of input tokens.
+            Note that the embeddings of the tokens [CLS] and [SEP] generated by
+            the Hugging Face tokenizer are discarded from the embedded_inputs tensor.
 
         Returns
         -------
@@ -208,7 +237,7 @@ class LayerLinear(Layer):
         """
 
         # States: left uninitialized to speed up things
-        states = torch.empty(batch_size, lengths.max(), self.reservoir_dim, dtype=torch.float32, device=self.device)
+        states = torch.empty(batch_size, lengths.max(), self.dim, dtype=torch.float32, device=self.device)
 
         # For each time step, we process all sentences in the batch concurrently
         for t in range(lengths.max()):
@@ -218,13 +247,13 @@ class LayerLinear(Layer):
             # Input activation
             u_act = torch.mm(self.input_w, u.transpose(0, 1))
 
-            # New reservoir state f(input_act + reservoir_act)
+            # New layer state f(input_act + reservoir_act)
             x_new = self.activation_function(u_act + self.bias.expand(batch_size, -1).transpose(0, 1))
 
-            # Amazing one-liner to zero any reservoir state after the respective sentence end
+            # Amazing one-liner to zero any layer state after the respective sentence end
             x_new *= (lengths - t > 0)
 
-            # Add new reservoir state to states
+            # Add new layer state to states
             states[:, t, :] = x_new.transpose(0, 1)
 
         #         # Possible loop-free implementation (to be verified)
@@ -238,7 +267,7 @@ class LayerLinear(Layer):
 
 class LayerRecurrent(LayerLinear):
     """
-    Implements the reservoir of an echo state network (ESN).
+    Implements the layer of an echo state network (ESN).
     The required parameters are self-explanatory.
 
     Parameters
@@ -252,21 +281,21 @@ class LayerRecurrent(LayerLinear):
     bias_scaling : float
         Bias scaling: bounds used for the bias random generation.
     distribution: str
-        Distribution used for reservoir weights ('gaussian' or 'uniform').
+        Distribution used for layer weights ('gaussian' or 'uniform').
     mean: float
         Mean of distribution.
     std: float
         Standard deviation of distribution.
     sparsity : float
-        Sparsity of the reservoir (between 0 and 1).
+        Sparsity of the layer (between 0 and 1).
     spectral_radius : float
-        Spectral radius of the reservoir weights.
+        Spectral radius of the layer weights.
         Should theoretically be below 1, but slightly above 1 works in practice.
     leaking_rate : float
-        Leaking rate of teh reservoir (between 0 and 1).
+        Leaking rate of teh layer (between 0 and 1).
         Determines the amount of last state and current input involved in the current state updating.
     activation_function : str
-        Activation function of the reservoir cells ('tanh' by default).
+        Activation function of the layer cells ('tanh' by default).
     seed : torch._C.Generator
         Random seed.
     device: torch.device
@@ -295,25 +324,25 @@ class LayerRecurrent(LayerLinear):
 
         # Reservoir
         if distribution == 'gaussian':
-            reservoir_w = mat.generate_gaussian_matrix(size=(self.reservoir_dim, self.reservoir_dim),
-                                                       sparsity=self.sparsity,
-                                                       mean=self.mean,
-                                                       std=self.std,
-                                                       spectral_radius=self.spectral_radius)
+            layer_w = mat.generate_gaussian_matrix(size=(self.dim, self.dim),
+                                                   sparsity=self.sparsity,
+                                                   mean=self.mean,
+                                                   std=self.std,
+                                                   spectral_radius=self.spectral_radius)
         elif distribution == 'uniform':
-            reservoir_w = mat.generate_uniform_matrix(size=(self.reservoir_dim, self.reservoir_dim),
-                                                      scaling=1.,
-                                                      sparsity=self.sparsity,
-                                                      spectral_radius=self.spectral_radius)
+            layer_w = mat.generate_uniform_matrix(size=(self.dim, self.dim),
+                                                  scaling=1.,
+                                                  sparsity=self.sparsity,
+                                                  spectral_radius=self.spectral_radius)
         else:
             raise ValueError('distribution not handled')
 
-        reservoir_w = Variable(reservoir_w, requires_grad=False)
-        self.register_buffer('reservoir_w', reservoir_w)
+        layer_w = Variable(layer_w, requires_grad=False)
+        self.register_buffer('layer_w', layer_w)
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
-        Implements the processing of a batch of input texts into the reservoir.
+        Implements the processing of a batch of input texts into the layer.
 
         Parameters
         ----------
@@ -351,17 +380,23 @@ class LayerRecurrent(LayerLinear):
         Returns
         -------
         states, lengths : torch.Tensor, torch.Tensor
-            states : 3D tensor (batch_size x max_length x reservoir_dim).
-            Reservoir states obtained after processing the batch of inputs into the reservoir.
+            states : 3D tensor (batch_size x max_length x dim).
+            Reservoir states obtained after processing the batch of inputs into the layer.
             lengths : 1D tensor (batch_size).
             Lengths of input texts in the batch.
         """
 
-        # Set initial reservoir state
+        print("\n")
+        print("_FORWARD")
+        print("embedded_inputs_REC before forward", embedded_inputs.shape)
+        print("lengths_REC before forward", lengths.shape)
+
+        # Set initial layer state
         current_reservoir_states = self.initial_state.expand(batch_size, -1).transpose(0, 1)
+        print("INIT current_reservoir_states", current_reservoir_states.shape)
 
         # States: left uninitialized to speed up things
-        states = torch.empty(batch_size, lengths.max(), self.reservoir_dim, dtype=torch.float32, device=self.device)
+        states = torch.empty(batch_size, lengths.max(), self.dim, dtype=torch.float32, device=self.device)
 
         # For each time step, we process all sentences in the batch concurrently
         for t in range(lengths.max()):
@@ -371,34 +406,197 @@ class LayerRecurrent(LayerLinear):
             # Input activation
             u_act = torch.mm(self.input_w, u.transpose(0, 1))
 
-            # Current reservoir state
+            # Current layer state
             x = current_reservoir_states
 
             # Reservoir activation
-            x_act = torch.mm(self.reservoir_w, x)
+            x_act = torch.mm(self.layer_w, x)
 
-            # New reservoir state f(input_act + reservoir_act)
+            # New layer state f(input_act + reservoir_act)
             x_new = self.activation_function(u_act + x_act + self.bias.expand(batch_size, -1).transpose(0, 1))
 
             x_new = (1 - self.leaking_rate) * x + self.leaking_rate * x_new
 
-            # Amazing one-liner to zero any reservoir state after the respective sentence end
+            # Amazing one-liner to zero any layer state after the respective sentence end
             x_new *= (lengths - t > 0)
 
-            # Add new reservoir state to states
+            # Add new layer state to states
             states[:, t, :] = x_new.transpose(0, 1)
 
-            # New reservoir state becomes current reservoir state
+            # New layer state becomes current layer state
             current_reservoir_states = x_new
+
+        print("states_REC after forward", states.shape)
+        print("lengths_REC after forward", lengths.shape)
+        print("\n")
 
         return states, lengths
 
 
-class GaussianReservoir(LayerRecurrent):
-    def __init__(self, **kwargs):
-        super().__init__(distribution='gaussian', **kwargs)
+def create_layer(mode='recurrent_layer', **kwargs):
+    """
+    Create a recurrent, linear or empty layer depending on the given mode.
+        mode : str
+            Either "recurrent_layer",  "linear_layer", "no_layer".
+    """
+    if mode == 'recurrent_layer':
+        return LayerRecurrent(**kwargs)
+    elif mode == 'linear_layer':
+        return LayerLinear(**kwargs)
+    elif mode == 'no_layer':
+        return Layer(**kwargs)
+    else:
+        raise ValueError('wrong mode')
 
 
-class UniformReservoir(LayerRecurrent):
-    def __init__(self, **kwargs):
-        super().__init__(distribution='uniform', **kwargs)
+class DeepLayer(Layer):
+    """
+    Implements a deep layer, to be used in the context of a deep echo state network (DeepESN).
+    Parameters are self-explanatory.
+
+    Parameters
+    ----------
+    nb_layers : int
+        Number of reservoirs composing the deep layer.
+    embedding_weights : torch.Tensor
+        Embedding matrix for the *first* layer layer only (a priori).
+    distributions : list of str
+        List of distributions ('uniform' or 'gaussian' of the reservoirs)
+    reservoir_dims : list of int
+        List of layer dimensions.
+    bias_scalings : list of float
+        List of bias scaling values of the reservoirs: bounds used for the bias random generation.
+    input_scalings : list of float
+        List of input scaling values applied only in the case of uniform reservoirs, and ignored otherwise:
+        bounds used for the input weights random generation.
+    means : list of float
+        List of means applied only in the case of Gaussian reservoirs, and ignored otherwise:
+        Mean for Gaussian generation of reservoirs weights.
+    stds : list of float
+        List of standard deviations applied only in the case of Gaussian reservoirs, and ignored otherwise:
+        Standard deviations for Gaussian generation of reservoirs weights.
+    sparsities : list of float
+        List of sparsity values of the reservoirs (between 0 and 1)
+    spectral_radii : list of float
+        Spectral radii of the reservoirs' weights.
+        Should theoretically be below 1, but slightly above 1 works in practice.
+    leaking_rates : list of float
+        Leaking rate of teh layer (between 0 and 1).
+        Determines the amount of last state and current input involved in the current state updating.
+    activation_functions : list of builtin_function_or_method
+        Activation function of the layer cells (tanh by default).
+    seeds : list of int
+        Random seeds.
+    """
+
+    # Constructor
+    def __init__(self,
+                 nb_layers=1,
+                 embedding_weights=None,
+                 seed=42,
+                 device=torch.device('cpu'),
+                 **kwargs
+                 ):
+
+        super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
+
+        self.nb_layers = nb_layers
+
+        def get_parameters(index):
+
+            new_kwargs = {}
+
+            for key, value in kwargs.items():
+                if key == 'input_dim':
+                    new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
+                elif isinstance(value, list) or isinstance(value, tuple):
+                    if len(value) != nb_layers:
+                        raise TypeError('length of parameter does not match the number of layer')
+                    else:
+                        new_kwargs[key] = value[index]
+                elif value is None:
+                    pass
+                else:
+                    new_kwargs[key] = value
+
+            return new_kwargs
+
+        # Generate all reservoirs composing the deep layer
+        self.layers = []
+
+        for i in range(self.nb_layers):
+            self.layers.append(create_layer(**get_parameters(i)))
+
+    def _forward(self, batch_size, lengths, embedded_inputs):
+        """
+        Implements forwards pass, i.e., processing of a batch of input texts by the successive layers.
+        This method uses the forward method of each layer
+
+        Parameters
+        ----------
+        embedded_inputs : torch.Tensor
+            2D input tensor (max_length x batch_size).
+            A batch of input texts is a 2D tensor.
+            Each tensor column represents a text - given as the sequence of its word indices.
+
+        Returns
+        -------
+        concatenated_states, lengths : torch.Tensor, torch.Tensor
+            concatenated_states : 3D tensor (batch_size x max_length x dim).
+            Reservoir states obtained after processing the batch of inputs into the successive reservoirs.
+            lengths : 1D tensor (batch_size).
+            Lengths of input texts in the batch.
+        """
+
+        # Initial input: batch of texts
+        current_inputs = embedded_inputs
+
+        # Forward pass through all reservoirs
+        states_l = []
+
+        for layer in self.layers:
+            print("NEW LAYER")
+            # states, lengths = layer.forward(current_inputs)
+            states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
+            states_l.append(states)
+            # current_inputs = states
+            current_inputs = states.transpose(0, 1)  # XXX
+
+        print("\n")
+        print("FORWARD DEEP")
+        print("states_l_DEEP", [x.shape for x in states_l])
+        concatenated_states = torch.cat(states_l, dim=2)
+        print("concatenated_states_l_DEEP", concatenated_states.shape)
+        print("lengths_DEEP_2", lengths.shape)
+        print("\n")
+
+        return concatenated_states, lengths
+
+    def warm_up(self, warm_up_sequence, return_states=False):
+        """
+        Performs forward pass of an input sequence.
+        For each layer, set its last layer state as its new initial state.
+        This method uses the warm_up method of each layer
+
+        Parameters
+        ----------
+        warm_up_sequence : torch.Tensor
+            1D tensor: word indices of the warm up sentence.
+        """
+
+        # Add a first dimension to sequence to match 2D input batch format
+        warm_up_sequence = warm_up_sequence.unsqueeze(1)
+
+        # Process text into the sequence of reservoirs
+        warm_states, warm_sentence_length = self.forward(warm_up_sequence)
+
+        # set new initial states of each layer
+        last_state, index = warm_states[-1, -1, :], 0
+
+        for reservoir in self.layers:
+            dim = reservoir.dim
+            reservoir.initial_state = last_state[index: index + dim]
+            index = index + dim
+
+        if return_states:
+            return warm_states

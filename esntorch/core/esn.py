@@ -29,14 +29,14 @@ import esntorch.core.merging_strategy as ms
 class EchoStateNetwork(nn.Module):
     """
     Implements the Echo State Network (ESN) per se.
-    An ESN consists of the combination of a reservoir, a merging strategy and a learning algorithm.
+    An ESN consists of the combination of a layer, a merging strategy and a learning algorithm.
 
     Parameters
     ----------
     embedding_weights : torch.Tensor
         Embedding matrix.
     distribution : str
-        Distribution of the reservoir: 'uniform' or 'gaussian'
+        Distribution of the layer: 'uniform' or 'gaussian'
     input_dim : int
         Input dimension.
     reservoir_dim : int
@@ -44,37 +44,39 @@ class EchoStateNetwork(nn.Module):
     bias_scaling : float
         Bias scaling: bounds used for the bias random generation.
     sparsity : float
-        Sparsity of the reservoir ((between 0 and 1))
+        Sparsity of the layer ((between 0 and 1))
     spectral_radius : float
-        Spectral radius of the reservoir weights.
+        Spectral radius of the layer weights.
         Should theoretically be below 1, but slightly above 1 works in practice.
     leaking_rate : float (between 0 and 1)
-        Leaking rate of teh reservoir (between 0 and 1).
+        Leaking rate of teh layer (between 0 and 1).
         Determines the amount of last state and current input involved in the current state updating.
     activation_function : str
-        Activation function of the reservoir cells ('tanh' by default).
+        Activation function of the layer cells ('tanh' by default).
     input_scaling : float
         Input scaling: bounds used for the input weights random generation (if distribution == 'uniform').
     mean : float
-        Mean of the input and reservoir weights (if distribution == 'gaussian')
+        Mean of the input and layer weights (if distribution == 'gaussian')
     std : float
-        Standard deviation of the input and reservoir weights (if distribution == 'gaussian')
+        Standard deviation of the input and layer weights (if distribution == 'gaussian')
     learning_algo : src.models.learning_algo.RidgeRegression, src.models.learning_algo.LogisticRegression
-        Learning algorithm used to learn the targets from the reservoir (merged) states.
+        Learning algorithm used to learn the targets from the layer (merged) states.
     criterion : torch.nn.modules.loss
         Criterion used to compute the loss between tagets and predictions (only if leaning_algo ≠ RidgeRegression).
     optimizer : torch.optim
         Optimizer used in the gradient descent method (only if leaning_algo ≠ RidgeRegression).
     merging_strategy : src.models.merging_strategy.MergingStrategy
-        Merging strategy used to merge the sucessive reservoir states.
+        Merging strategy used to merge the sucessive layer states.
     bidirectional : bool
         Flag for bi-directionality.
     mode : str
         The ESN can be used in different modes in order to implement kinds of models
         (classical ESN, baselines, etc.):
-        If mode=='esn', the classical ESN is implemented (EMB + RESERVOIR + LA).
+        If mode=='recurrent_layer', the classical ESN is implemented (EMB + RESERVOIR + LA).
         If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
         If mode=='no_layer', the Simple Baseline is implemented (EMB + LA).
+    deep : bool
+        If true implements the Deep Echo State Network (BS) per se (EMB + multiple RESERVOIR + LA).
     seed : torch._C.Generator
         Random seed.
     """
@@ -87,21 +89,18 @@ class EchoStateNetwork(nn.Module):
                  merging_strategy=None,
                  bidirectional=False,
                  lexicon=None,
-                 mode='esn',
+                 deep=False,
                  device=torch.device('cpu'),
                  **kwargs
                  ):
 
         super().__init__()
         self.device = device
-        if mode == 'esn':
-            self.reservoir = res.LayerRecurrent(device=device, **kwargs)
-        elif mode == 'linear_layer':
-            self.reservoir = res.LayerLinear(device=device, **kwargs)
-        elif mode == 'no_layer':
-            self.reservoir = res.Layer(device=device, **kwargs)
+
+        if deep:
+            self.layer = res.DeepLayer(device=device, **kwargs)
         else:
-            raise ValueError('wrong mode')
+            self.layer = res.create_layer(device=device, **kwargs)
 
         self.merging_strategy = ms.MergingStrategy(merging_strategy, lexicon=lexicon)
 
@@ -120,24 +119,24 @@ class EchoStateNetwork(nn.Module):
             1D tensor: word indices of the warm up sentence.
         """
 
-        self.reservoir.warm_up(warm_up_sequence)
+        self.layer.warm_up(warm_up_sequence)
 
     def _apply_merge_strategy(self, states, lengths, texts,
                               reversed_states=None, additional_fts=None):
         """
-        Merges the corresponding reservoir states depending on the merging strategy
+        Merges the corresponding layer states depending on the merging strategy
         and the whether to apply bi-directionality or not.
 
         Parameters
         ----------
         states : torch.Tensor
-            3D tensor: the states of the token that went through the reservoir
+            3D tensor: the states of the token that went through the layer
         lengths : torch.Tensor
             1D tensor, the token sentences true lengths.
         texts: torch.Tensor
             2D tensor containing word indices of the texts in the batch.
         reversed_states : torch.Tensor
-            3D tensor: Optional, the states of the token that went through the reservoir
+            3D tensor: Optional, the states of the token that went through the layer
             in the reverse order when the bi-directional flag is set.
         additional_fts : None, torch.Tensor
             2D tensor containing new features (e.g. tf-idf)
@@ -150,7 +149,7 @@ class EchoStateNetwork(nn.Module):
         """
         if self.bidirectional:
             if self.merging_strategy.merging_strategy is None:
-                # concatenate the normal and reversed states along the reservoir dimension while not
+                # concatenate the normal and reversed states along the layer dimension while not
                 # forgetting to first put the reversed words in the correct order, then apply the merging.
                 restored_states = reversed_states.clone()
                 for i, l in enumerate(lengths):
@@ -193,7 +192,7 @@ class EchoStateNetwork(nn.Module):
         for i, batch in enumerate(train_dataloader):
             # print(".", end="")
 
-            if callable(self.reservoir.embedding):  # HuggingFace
+            if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
                 if 'additional_fts' in batch.keys():
@@ -204,13 +203,13 @@ class EchoStateNetwork(nn.Module):
                 batch_text = batch.text
                 batch_label = batch.label
 
-            # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)  # states
+            # Pass the tokens through the layer
+            states, lengths = self.layer.forward(batch_text)  # states
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.layer.reverse_forward(batch_text)
 
             labels = batch_label
 
@@ -221,11 +220,12 @@ class EchoStateNetwork(nn.Module):
             # apply the correct merging strategy and bi-directionality if needed.
             final_states = self._apply_merge_strategy(states, lengths, batch_text,
                                                       reversed_states, additional_fts)
-
             states_l.append(final_states)
             labels_l.append(labels)
 
+        # nprint("*** states_l", [state.shape for state in states_l])
         all_states, all_labels = torch.cat(states_l, dim=0), torch.cat(labels_l, dim=0)
+        # print("*** all_states, all_labels ", all_states.shape, all_labels.shape)
 
         self.learning_algo.fit(all_states, all_labels)
 
@@ -257,7 +257,7 @@ class EchoStateNetwork(nn.Module):
         loss_l = []
         n_iter = 0
 
-        #  loop over epochs
+        # loop over epochs
         for epoch in range(int(epochs)):
 
             print("Epoch", epoch, end="")
@@ -266,7 +266,7 @@ class EchoStateNetwork(nn.Module):
             for i_batch, batch in enumerate(train_dataloader):
                 print(".", end="")
 
-                if callable(self.reservoir.embedding):  # HuggingFace
+                if callable(self.layer.embedding):  # HuggingFace
                     batch_text = batch
                     batch_label = batch["labels"].to(self.device)
                     if 'additional_fts' in batch.keys():
@@ -277,13 +277,13 @@ class EchoStateNetwork(nn.Module):
                     batch_text = batch.text
                     batch_label = batch.label
 
-                # Pass the tokens through the reservoir
-                states, lengths = self.reservoir.forward(batch_text)  # states
+                # Pass the tokens through the layer
+                states, lengths = self.layer.forward(batch_text)  # states
 
                 # Do the same as above but with the sentences reversed
                 reversed_states = None
                 if self.bidirectional:
-                    reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                    reversed_states, _ = self.layer.reverse_forward(batch_text)
 
                 labels = batch_label.type(torch.int64)  # labels (converted to int for the loss)
                 # if merging_strategy is None: duplicate labels
@@ -352,16 +352,16 @@ class EchoStateNetwork(nn.Module):
 
     def _compute_predictions(self, states, lengths):
         """
-        Takes reservoir states, passes them to the learning algorithm and computes predictions out of them.
+        Takes layer states, passes them to the learning algorithm and computes predictions out of them.
         Predictions are computed differently depending on whether the merging strategy is None or not.
         If merging strategy is None, the predictions are computed as follows:
         For each input sentence u:
-        (1) the corresponding reservoir states X_u are passed through the learning algorithm;
+        (1) the corresponding layer states X_u are passed through the learning algorithm;
         (2) the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
         (3) the prediction is arg_max(y_u).
         If merging strategy is not None, the predictions are computed as follows:
         For each input sentence u:
-        (1) the corresponding merged reservoir state x_u is passed through the learning algorithm,
+        (1) the corresponding merged layer state x_u is passed through the learning algorithm,
         yielding a 1-dim tensor y_u;
         (3) the prediction is the arg_max(y_u).
 
@@ -393,9 +393,9 @@ class EchoStateNetwork(nn.Module):
             predictions = outputs.argmax(dim=1)
 
         else:  # merging strategy is not None
-            if raw_outputs.dim() != 1:  #  the learning algo returns the probas
+            if raw_outputs.dim() != 1:  # the learning algo returns the probas
                 outputs = raw_outputs.argmax(dim=1).float()
-            else:  #  the learning algo returns the classes
+            else:  # the learning algo returns the classes
                 outputs = raw_outputs.float()
             predictions = outputs.type(torch.int64)
 
@@ -427,7 +427,7 @@ class EchoStateNetwork(nn.Module):
         for i, batch in enumerate(dataloader):
             # print(".", end="")
 
-            if callable(self.reservoir.embedding):  # HuggingFace
+            if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
                 if 'additional_fts' in batch.keys():
@@ -438,13 +438,13 @@ class EchoStateNetwork(nn.Module):
                 batch_text = batch.text
                 batch_label = batch.label
 
-            # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text)
+            # Pass the tokens through the layer
+            states, lengths = self.layer.forward(batch_text)
 
             # Do the same as above but with the sentences reversed
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text)
+                reversed_states, _ = self.layer.reverse_forward(batch_text)
 
             # apply the correct merging strategy and bi-directionality if needed.
             final_states = self._apply_merge_strategy(states, lengths, batch_text,
