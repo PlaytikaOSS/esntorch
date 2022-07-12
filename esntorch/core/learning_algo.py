@@ -127,7 +127,7 @@ class RidgeRegression(torch.nn.Module):
         return outputs
 
 
-class RidgeRegression2:
+class RidgeRegression_skl:
     """
     Implements Ridge Regression from scikit learn.
 
@@ -338,7 +338,7 @@ class LogisticRegression(torch.nn.Module):
         return outputs
 
 
-class LogisticRegression2:
+class LogisticRegression_skl:
     """
     Implements Logistic Regression from scikit learn.
 

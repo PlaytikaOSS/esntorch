@@ -125,7 +125,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         'bidirectional': False,
         'device': device,
         'mode': 'recurrent_layer',  # 'no_layer, 'linear_layer', 'recurrent_layer'
-        'seed': 42345
+        'seed': 42
     }
 
     # Instantiate the ESN
@@ -135,7 +135,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     if learning_algo == 'ridge':
         ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
     elif learning_algo == 'ridge_skl':
-        ESN.learning_algo = la.RidgeRegression2(alpha=7.843536845714804)
+        ESN.learning_algo = la.RidgeRegression_skl(alpha=7.843536845714804)
     elif learning_algo == 'svc':
         ESN.learning_algo = la.LinearSVC()
     elif learning_algo == 'logistic':
@@ -143,7 +143,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         ESN.criterion = torch.nn.CrossEntropyLoss()
         ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
     elif learning_algo == 'logistic_skl':
-        ESN.learning_algo = la.LogisticRegression2()
+        ESN.learning_algo = la.LogisticRegression_skl()
     elif learning_algo == 'deep_nn':
         ESN.learning_algo = la.DeepNN([esn_params['dim'], 512, 256, 6])
         ESN.criterion = torch.nn.CrossEntropyLoss()
@@ -185,7 +185,7 @@ def test_RidgeRegression_fit(create_dataset):
     assert train_acc > 0.8 and test_acc > 0.8
 
 
-def test_RidgeRegression2_fit(create_dataset):
+def test_RidgeRegression_skl_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
     train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge_skl')
     assert train_acc > 0.8 and test_acc > 0.8
@@ -197,7 +197,7 @@ def test_LogisticRegression_fit(create_dataset):
     assert train_acc > 0.8 and test_acc > 0.8
 
 
-def test_LogisticRegression2_fit(create_dataset):
+def test_LogisticRegression_skl_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
     train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic_skl')
     assert train_acc > 0.8 and test_acc > 0.8
