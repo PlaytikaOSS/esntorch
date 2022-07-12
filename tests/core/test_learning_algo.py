@@ -98,7 +98,7 @@ def create_dataset():
     return dataset_d, dataloader_d
 
 
-def train_esn(dataset_d, dataloader_d, learning_algo=None):
+def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
     """Train ESN with a designated learning algorithm."""
 
     # Device
@@ -122,7 +122,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         'criterion': None,  # initialzed below
         'optimizer': None,  # initialzed below
         'merging_strategy': 'mean',
-        'bidirectional': False,
+        'bidirectional': bidirectional,
         'device': device,
         'mode': 'recurrent_layer',  # 'no_layer, 'linear_layer', 'recurrent_layer'
         'seed': 42
@@ -132,6 +132,11 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     ESN = esn.EchoStateNetwork(**esn_params)
 
     # Define the learning algo of the ESN
+    if bidirectional:
+        input_dim = esn_params['dim']*2
+    else:
+        input_dim = esn_params['dim']
+
     if learning_algo == 'ridge':
         ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
     elif learning_algo == 'ridge_skl':
@@ -139,13 +144,13 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
     elif learning_algo == 'svc':
         ESN.learning_algo = la.LinearSVC()
     elif learning_algo == 'logistic':
-        ESN.learning_algo = la.LogisticRegression(input_dim=esn_params['dim'], output_dim=6)
+        ESN.learning_algo = la.LogisticRegression(input_dim=input_dim, output_dim=6)
         ESN.criterion = torch.nn.CrossEntropyLoss()
         ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
     elif learning_algo == 'logistic_skl':
         ESN.learning_algo = la.LogisticRegression_skl()
     elif learning_algo == 'deep_nn':
-        ESN.learning_algo = la.DeepNN([esn_params['dim'], 512, 256, 6])
+        ESN.learning_algo = la.DeepNN([input_dim, 512, 256, 6])
         ESN.criterion = torch.nn.CrossEntropyLoss()
         ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
 
@@ -181,35 +186,47 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
 
 def test_RidgeRegression_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='ridge', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
 
 
 def test_RidgeRegression_skl_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='ridge_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='ridge_skl', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
 
 
 def test_LogisticRegression_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='logistic', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
 
 
 def test_LogisticRegression_skl_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='logistic_skl')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='logistic_skl', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
 
 
 def test_SVC_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='svc')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='svc', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
 
 
 def test_DeepNN_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
-    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='deep_nn')
-    assert train_acc > 0.8 and test_acc > 0.8
+    for b in [False, True]:
+        train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
+                                        learning_algo='deep_nn', bidirectional=b)
+        assert train_acc > 0.8 and test_acc > 0.8
