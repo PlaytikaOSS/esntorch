@@ -432,7 +432,7 @@ class LogisticRegression2:
 class DeepNN(torch.nn.Module):
     """
     Implements a deep neural network whose layers are specified by a list.
-    Make sure the the dimensions of the first and last layers
+    Make sure that the dimensions of the first and last layers
     correspond to the input and output dimensions, respectively.
     Example: A 2-hidden layer NN with 50 neurons in each layer and input / output dimensions of 300 / 3
     is implemented as follows: layers_l = [300, 50, 50, 3]; model = DeepNN(layers_l).

@@ -72,26 +72,18 @@ class Layer(nn.Module):
 
     def _embed(self, batch):
 
-        print("\n")
-
         if callable(self.embedding):
-            print("EMB: embedded_inputs before embedding", batch["input_ids"].shape)
             batch_size = int(batch["input_ids"].shape[0])
             # Ignore the first [CLS] and the last [SEP] tokens (hence lengths - 2)
             lengths = batch["lengths"].to(self.device) - 2
             embedded_inputs = self.embedding(batch)
             embedded_inputs = embedded_inputs[1:, :, :]  # Ignore [CLS]
         else:
-            print("NON EMB: embedded_inputs before embedding", batch.shape)
             # batch_size = int(batch.size()[0])
             batch_size = int(batch.shape[1])  # XXX
             # lengths = batch.sum(dim=2).shape[1] - (batch.sum(dim=2) == 0.0).sum(dim=1)
             lengths = (batch.sum(dim=2) != 0.0).sum(dim=0)  # XXX
             embedded_inputs = batch  # torch.transpose(batch, 0, 1) # XXX
-
-        print("embedded_inputs after embedding", embedded_inputs.shape)
-        print("lengths after embedding", lengths.shape)
-        print("\n")
 
         return batch_size, lengths, embedded_inputs
 
@@ -386,14 +378,8 @@ class LayerRecurrent(LayerLinear):
             Lengths of input texts in the batch.
         """
 
-        print("\n")
-        print("_FORWARD")
-        print("embedded_inputs_REC before forward", embedded_inputs.shape)
-        print("lengths_REC before forward", lengths.shape)
-
         # Set initial layer state
         current_reservoir_states = self.initial_state.expand(batch_size, -1).transpose(0, 1)
-        print("INIT current_reservoir_states", current_reservoir_states.shape)
 
         # States: left uninitialized to speed up things
         states = torch.empty(batch_size, lengths.max(), self.dim, dtype=torch.float32, device=self.device)
@@ -425,10 +411,6 @@ class LayerRecurrent(LayerLinear):
 
             # New layer state becomes current layer state
             current_reservoir_states = x_new
-
-        print("states_REC after forward", states.shape)
-        print("lengths_REC after forward", lengths.shape)
-        print("\n")
 
         return states, lengths
 
@@ -555,20 +537,13 @@ class DeepLayer(Layer):
         states_l = []
 
         for layer in self.layers:
-            print("NEW LAYER")
             # states, lengths = layer.forward(current_inputs)
             states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
             states_l.append(states)
             # current_inputs = states
             current_inputs = states.transpose(0, 1)  # XXX
 
-        print("\n")
-        print("FORWARD DEEP")
-        print("states_l_DEEP", [x.shape for x in states_l])
         concatenated_states = torch.cat(states_l, dim=2)
-        print("concatenated_states_l_DEEP", concatenated_states.shape)
-        print("lengths_DEEP_2", lengths.shape)
-        print("\n")
 
         return concatenated_states, lengths
 

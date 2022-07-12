@@ -121,8 +121,8 @@ class EchoStateNetwork(nn.Module):
 
         self.layer.warm_up(warm_up_sequence)
 
-    def _apply_merge_strategy(self, states, lengths, texts,
-                              reversed_states=None, additional_fts=None):
+    def _apply_pooling_strategy(self, states, lengths, texts,
+                                reversed_states=None, additional_fts=None):
         """
         Merges the corresponding layer states depending on the merging strategy
         and the whether to apply bi-directionality or not.
@@ -218,14 +218,12 @@ class EchoStateNetwork(nn.Module):
                 labels = mat.duplicate_labels(labels, lengths)
 
             # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text,
-                                                      reversed_states, additional_fts)
+            final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                        reversed_states, additional_fts)
             states_l.append(final_states)
             labels_l.append(labels)
 
-        # nprint("*** states_l", [state.shape for state in states_l])
         all_states, all_labels = torch.cat(states_l, dim=0), torch.cat(labels_l, dim=0)
-        # print("*** all_states, all_labels ", all_states.shape, all_labels.shape)
 
         self.learning_algo.fit(all_states, all_labels)
 
@@ -291,8 +289,8 @@ class EchoStateNetwork(nn.Module):
                     labels = mat.duplicate_labels(labels, lengths)
 
                 # apply the correct merging strategy and bi-directionality if needed.
-                final_states = self._apply_merge_strategy(states, lengths, batch_text,
-                                                          reversed_states, additional_fts)
+                final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                            reversed_states, additional_fts)
 
                 outputs = self.learning_algo(final_states)  # outputs
 
@@ -447,8 +445,8 @@ class EchoStateNetwork(nn.Module):
                 reversed_states, _ = self.layer.reverse_forward(batch_text)
 
             # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text,
-                                                      reversed_states, additional_fts)
+            final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                        reversed_states, additional_fts)
 
             predictions = self._compute_predictions(final_states, lengths)
             predictions_l.append(predictions.reshape(-1))

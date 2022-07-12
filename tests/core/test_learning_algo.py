@@ -124,7 +124,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
-        'mode': 'esn',  # 'no_layer, 'linear_layer'
+        'mode': 'recurrent_layer',  # 'no_layer, 'linear_layer', 'recurrent_layer'
         'seed': 42345
     }
 
@@ -144,6 +144,10 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None):
         ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
     elif learning_algo == 'logistic_skl':
         ESN.learning_algo = la.LogisticRegression2()
+    elif learning_algo == 'deep_nn':
+        ESN.learning_algo = la.DeepNN([esn_params['dim'], 512, 256, 6])
+        ESN.criterion = torch.nn.CrossEntropyLoss()
+        ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
 
     # Put the ESN on the device (CPU or GPU)
     ESN = ESN.to(device)
@@ -202,4 +206,10 @@ def test_LogisticRegression2_fit(create_dataset):
 def test_SVC_fit(create_dataset):
     dataset_d, dataloader_d = create_dataset
     train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='svc')
+    assert train_acc > 0.8 and test_acc > 0.8
+
+
+def test_DeepNN_fit(create_dataset):
+    dataset_d, dataloader_d = create_dataset
+    train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d, learning_algo='deep_nn')
     assert train_acc > 0.8 and test_acc > 0.8
