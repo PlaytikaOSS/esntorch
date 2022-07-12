@@ -258,7 +258,7 @@ class EchoStateNetwork(nn.Module):
         for epoch in tqdm_notebook(range(int(epochs))):
 
             # loop over batches
-            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader)):
+            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=True)):
 
                 if callable(self.layer.embedding):  # HuggingFace
                     batch_text = batch
@@ -379,7 +379,6 @@ class EchoStateNetwork(nn.Module):
             # tmp = list(lengths.numpy())
             # tmp = [sum(tmp[:i]) - 1 for i in range(1, len(tmp) + 1)]
             # predictions = outputs[tmp].type(torch.int64)
-            # print("*** raw_outputs ***", raw_outputs.size(), raw_outputs.dtype)
 
             tmp = list(lengths.cpu().numpy())
             tmp = [0] + [sum(tmp[:i]) for i in range(1, len(tmp) + 1)]
