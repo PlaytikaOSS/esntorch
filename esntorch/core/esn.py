@@ -258,7 +258,7 @@ class EchoStateNetwork(nn.Module):
         for epoch in tqdm_notebook(range(int(epochs))):
 
             # loop over batches
-            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=True)):
+            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=False)):
 
                 if callable(self.layer.embedding):  # HuggingFace
                     batch_text = batch
