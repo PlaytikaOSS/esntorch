@@ -183,15 +183,13 @@ class EchoStateNetwork(nn.Module):
         None
         """
 
-        # print("Computing closed-form solution...")
+        print("Computing closed-form solution...")
 
         states_l = []
         labels_l = []
 
         # loop over batches
-        # print("Processing", end="")
-        for i, batch in enumerate(train_dataloader):
-            # print(".", end="")
+        for i, batch in enumerate(tqdm(train_dataloader)):
 
             if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
@@ -228,7 +226,7 @@ class EchoStateNetwork(nn.Module):
 
         self.learning_algo.fit(all_states, all_labels)
 
-        # print("\nTraining complete.")
+        print("\nTraining complete.")
 
         return None
 
@@ -259,11 +257,8 @@ class EchoStateNetwork(nn.Module):
         # loop over epochs
         for epoch in tqdm(range(int(epochs))):
 
-            # print("Epoch", epoch, end="")
-
             # loop over batches
-            for i_batch, batch in enumerate(train_dataloader):
-                print(".", end="")
+            for i_batch, batch in enumerate(tqdm(train_dataloader)):
 
                 if callable(self.layer.embedding):  # HuggingFace
                     batch_text = batch
@@ -422,9 +417,7 @@ class EchoStateNetwork(nn.Module):
         total = 0
         testing_mode = False
 
-        # print("Processing", end="")
-        for i, batch in enumerate(dataloader):
-            # print(".", end="")
+        for i, batch in enumerate(tqdm(dataloader)):
 
             if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
