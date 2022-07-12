@@ -24,7 +24,7 @@ import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
 import esntorch.core.merging_strategy as ms
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 class EchoStateNetwork(nn.Module):
