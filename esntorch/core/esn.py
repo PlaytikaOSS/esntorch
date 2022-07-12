@@ -24,6 +24,7 @@ import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
 import esntorch.core.merging_strategy as ms
+from tqdm.notebook import tqdm
 
 
 class EchoStateNetwork(nn.Module):
@@ -256,9 +257,9 @@ class EchoStateNetwork(nn.Module):
         n_iter = 0
 
         # loop over epochs
-        for epoch in range(int(epochs)):
+        for epoch in tqdm(range(int(epochs))):
 
-            print("Epoch", epoch, end="")
+            # print("Epoch", epoch, end="")
 
             # loop over batches
             for i_batch, batch in enumerate(train_dataloader):
