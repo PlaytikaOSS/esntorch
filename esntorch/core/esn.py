@@ -24,7 +24,7 @@ import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
 import esntorch.core.merging_strategy as ms
-from tqdm import tqdm
+from tqdm.notebook import tqdm_notebook
 
 
 class EchoStateNetwork(nn.Module):
@@ -189,7 +189,7 @@ class EchoStateNetwork(nn.Module):
         labels_l = []
 
         # loop over batches
-        for i, batch in enumerate(tqdm(train_dataloader)):
+        for i, batch in enumerate(tqdm_notebook(train_dataloader)):
 
             if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
@@ -255,10 +255,10 @@ class EchoStateNetwork(nn.Module):
         n_iter = 0
 
         # loop over epochs
-        for epoch in tqdm(range(int(epochs))):
+        for epoch in tqdm_notebook(range(int(epochs))):
 
             # loop over batches
-            for i_batch, batch in enumerate(tqdm(train_dataloader)):
+            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader)):
 
                 if callable(self.layer.embedding):  # HuggingFace
                     batch_text = batch
@@ -417,7 +417,7 @@ class EchoStateNetwork(nn.Module):
         total = 0
         testing_mode = False
 
-        for i, batch in enumerate(tqdm(dataloader)):
+        for i, batch in enumerate(tqdm_notebook(dataloader)):
 
             if callable(self.layer.embedding):  # HuggingFace
                 batch_text = batch
