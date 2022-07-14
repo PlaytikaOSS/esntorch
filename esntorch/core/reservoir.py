@@ -390,7 +390,6 @@ class LayerRecurrent(LayerLinear):
             u = embedded_inputs[t, :, :]
 
             # Input activation
-            print("DEBUG", self.input_w.device, u.device)
             u_act = torch.mm(self.input_w, u.transpose(0, 1))
 
             # Current layer state
@@ -509,6 +508,12 @@ class DeepLayer(Layer):
 
         for i in range(self.nb_layers):
             self.layers.append(create_layer(**get_parameters(i)))
+
+        # XXX
+        layers_w = [layer.layer_w for layer in self.layers]
+        layers_w = Variable(layers_w, requires_grad=False)
+        self.register_buffer('layers_w', layers_w)
+        # XXX
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
