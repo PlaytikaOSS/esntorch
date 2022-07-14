@@ -538,7 +538,7 @@ class DeepLayer(Layer):
 
         for layer in self.layers:
             # states, lengths = layer.forward(current_inputs)
-            print("DEBUG", batch_size.device, lengths.device, current_inputs.device)
+            print("DEBUG", lengths.device, current_inputs.device)
             states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
             states_l.append(states)
             # current_inputs = states
