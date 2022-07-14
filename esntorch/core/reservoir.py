@@ -539,6 +539,7 @@ class DeepLayer(Layer):
         for layer in self.layers:
             # states, lengths = layer.forward(current_inputs)
             states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
+            print("DEBUG", states.device, lengths.device)
             states_l.append(states)
             # current_inputs = states
             current_inputs = states.transpose(0, 1)  # XXX
@@ -568,9 +569,9 @@ class DeepLayer(Layer):
         # set new initial states of each layer
         last_state, index = warm_states[-1, -1, :], 0
 
-        for reservoir in self.layers:
-            dim = reservoir.dim
-            reservoir.initial_state = last_state[index: index + dim]
+        for layer in self.layers:
+            dim = layer.dim
+            layer.initial_state = last_state[index: index + dim]
             index = index + dim
 
         if return_states:
