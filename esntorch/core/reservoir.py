@@ -511,9 +511,8 @@ class DeepLayer(Layer):
 
         # Put buffer variables of the layers to device
         for layer in self.layers:
-            tmp_d = layer.__dict__['_buffers']
-            for k, v in tmp_d.items():
-                v = v.to(ESN.device)
+            for k, v in layer.__dict__['_buffers'].items():
+                v = v.to(self.device)
         # XXX
 
     def _forward(self, batch_size, lengths, embedded_inputs):
