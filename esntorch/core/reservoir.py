@@ -509,10 +509,11 @@ class DeepLayer(Layer):
         for i in range(self.nb_layers):
             self.layers.append(create_layer(**get_parameters(i)))
 
-        # XXX
-        for i, layer in enumerate(self.layers):
-            self.register_buffer(f'input_{i}_w', layer.input_w)
-            layer.input_w = self.__getattr__(f'input_{i}_w')
+        # Put buffer variables of the layers to device
+        for layer in self.layers:
+            tmp_d = layer.__dict__['_buffers']
+            for k, v in tmp_d.items():
+                v = v.to(ESN.device)
         # XXX
 
     def _forward(self, batch_size, lengths, embedded_inputs):
