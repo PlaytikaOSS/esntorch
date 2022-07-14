@@ -512,7 +512,7 @@ class DeepLayer(Layer):
         # XXX
         for i, layer in enumerate(self.layers):
             self.register_buffer(f'input_{i}_w', layer.input_w)
-            # self.register_buffer(f'layer_{i}_w', layer.layer_w)
+            layer.input_w = self.__getattr__(f'input_{i}_w')
         # XXX
 
     def _forward(self, batch_size, lengths, embedded_inputs):
