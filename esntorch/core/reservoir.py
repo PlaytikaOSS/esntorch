@@ -511,9 +511,7 @@ class DeepLayer(Layer):
 
         # XXX
         for i, layer in enumerate(self.layers):
-            input_w = Variable(layer.input_w, requires_grad=False)
-            self.register_buffer(f'input_{i}_w', input_w)
-            layer.input_w = input_w
+            self.register_buffer(f'input_{i}_w', layer.input_w)
             # self.register_buffer(f'layer_{i}_w', layer.layer_w)
         # XXX
 
