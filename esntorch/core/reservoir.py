@@ -66,9 +66,11 @@ class Layer(nn.Module):
             self.HuggingFaceEmbedding = emb.EmbeddingModel(embedding_weights, device)
             self.embedding = lambda batch: self.HuggingFaceEmbedding.get_embedding(batch)
 
-        # No embedding, for deep reservoirs
-        else:
-            self.embedding = None
+        # XXX
+#         # No embedding, for deep
+#         else:
+#             self.embedding = None
+        
 
     def _embed(self, batch):
 
@@ -77,13 +79,13 @@ class Layer(nn.Module):
             # Ignore the first [CLS] and the last [SEP] tokens (hence lengths - 2)
             lengths = batch["lengths"].to(self.device) - 2
             embedded_inputs = self.embedding(batch)
-            embedded_inputs = embedded_inputs[1:, :, :]  # Ignore [CLS]
+            embedded_inputs = embedded_inputs[1:, :, :].to(self.device)  # Ignore [CLS]
         else:
             # batch_size = int(batch.size()[0])
             batch_size = int(batch.shape[1])  # XXX
             # lengths = batch.sum(dim=2).shape[1] - (batch.sum(dim=2) == 0.0).sum(dim=1)
             lengths = (batch.sum(dim=2) != 0.0).sum(dim=0)  # XXX
-            embedded_inputs = batch  # torch.transpose(batch, 0, 1) # XXX
+            embedded_inputs = batch.to(self.device)  # torch.transpose(batch, 0, 1) # XXX
 
         return batch_size, lengths, embedded_inputs
 
@@ -383,7 +385,8 @@ class LayerRecurrent(LayerLinear):
 
         # States: left uninitialized to speed up things
         states = torch.empty(batch_size, lengths.max(), self.dim, dtype=torch.float32, device=self.device)
-
+        # print("INPUTS BEFORE", embedded_inputs.shape) # XXX
+        
         # For each time step, we process all sentences in the batch concurrently
         for t in range(lengths.max()):
             # Current input (embedded word)
@@ -411,7 +414,9 @@ class LayerRecurrent(LayerLinear):
 
             # New layer state becomes current layer state
             current_reservoir_states = x_new
-
+        
+        # print("STATES AFTER", states.shape) # XXX
+        
         return states, lengths
 
 
@@ -483,24 +488,36 @@ class DeepLayer(Layer):
         super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
 
         self.nb_layers = nb_layers
+        self.embedding_weights = embedding_weights
 
         def get_parameters(index):
-
+                        
             new_kwargs = {}
-
+            
             for key, value in kwargs.items():
-                if key == 'input_dim':
-                    new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
-                elif isinstance(value, list) or isinstance(value, tuple):
+                
+#                 if key == 'input_dim':
+#                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
+                    
+#                 if key == 'embedding_weights':
+#                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
+                    
+                if isinstance(value, list) or isinstance(value, tuple):
                     if len(value) != nb_layers:
-                        raise TypeError('length of parameter does not match the number of layer')
+                        raise TypeError('Number of parameters and number of layers do not match...')
                     else:
                         new_kwargs[key] = value[index]
+                
                 elif value is None:
                     pass
+                
                 else:
                     new_kwargs[key] = value
-
+            
+            new_kwargs['device'] = self.device # XXX
+            # new_kwargs['embedding_weights'] = self.embedding_weights if index == 0 else None # XXX
+            new_kwargs['input_dim'] = self.layers[index - 1].dim if index > 0 else kwargs['input_dim'] # XXX
+                        
             return new_kwargs
 
         # Generate all reservoirs composing the deep layer
@@ -509,11 +526,10 @@ class DeepLayer(Layer):
         for i in range(self.nb_layers):
             self.layers.append(create_layer(**get_parameters(i)))
 
-        # Put buffer variables of the layers to device
+        # Put buffer variables of the layers to device # XXX
         for layer in self.layers:
             for k, v in layer.__dict__['_buffers'].items():
                 layer.__dict__['_buffers'][k] = v.to(self.device)
-        # XXX
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
@@ -543,6 +559,7 @@ class DeepLayer(Layer):
         states_l = []
 
         for layer in self.layers:
+            # print("NEW LAYER") # XXX
             # states, lengths = layer.forward(current_inputs)
             states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
             states_l.append(states)

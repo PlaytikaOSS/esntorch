@@ -66,7 +66,7 @@ class RidgeRegression(torch.nn.Module):
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-
+                
         device = torch.device('cuda' if X.is_cuda else 'cpu')
 
         # Add a column of ones to X to represent the bias
