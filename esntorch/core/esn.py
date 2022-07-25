@@ -20,6 +20,7 @@
 
 import torch
 import torch.nn as nn
+from transformers import BatchEncoding
 import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
@@ -110,18 +111,27 @@ class EchoStateNetwork(nn.Module):
         self.optimizer = optimizer
         self.bidirectional = bidirectional
 
-    def warm_up(self, warm_up_sequence):
+    def warm_up(self, dataset):
         """
         Passes a warm up sequence to the ESN and set the warm state as the new initial state.
 
         Parameters
         ----------
-        warm_up_sequence : torch.Tensor
+        sentence : torch.Tensor XXX
             1D tensor: word indices of the warm up sentence.
         """
 
-        self.layer.warm_up(warm_up_sequence)
-
+        for i, text in enumerate(dataset):
+            
+            # text = dataset[i]
+            
+            for k, v in text.items():
+                
+                text[k] = v.unsqueeze(0)
+                
+            text = BatchEncoding(text)
+            self.layer.warm_up(text)
+            
     def _apply_pooling_strategy(self, states, lengths, texts,
                                 reversed_states=None, additional_fts=None):
         """

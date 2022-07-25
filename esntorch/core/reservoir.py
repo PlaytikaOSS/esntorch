@@ -116,19 +116,9 @@ class Layer(nn.Module):
         warm_up_sequence : torch.Tensor
             1D tensor: word indices of the warm up sentence.
         """
-
-        if not callable(self.embedding):  # TorchText
-            # Add a first dimension to sequence to match 2D input batch format
-            warm_up_sequence = warm_up_sequence.unsqueeze(1)
-
-        # Process text into the layer
-        warm_states, warm_sentence_length = self.forward(warm_up_sequence)
-        # Remove first dimension and take last valid state
-        self.initial_state = warm_states[0, warm_sentence_length - 1, :].reshape(-1)
-
-        if return_states:
-            return warm_states
-
+        
+        raise NotImplementedError("Warm up should probably not be used with this kind of layer.")
+        
 
 class LayerLinear(Layer):
     """
@@ -201,9 +191,6 @@ class LayerLinear(Layer):
             bias = torch.zeros(size=(1, self.dim)).flatten()
         bias = Variable(bias, requires_grad=False)
         self.register_buffer('bias', bias)
-
-        # Initial_state
-        self.register_buffer('initial_state', torch.rand(self.dim, requires_grad=False))
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
@@ -333,6 +320,9 @@ class LayerRecurrent(LayerLinear):
 
         layer_w = Variable(layer_w, requires_grad=False)
         self.register_buffer('layer_w', layer_w)
+        
+         # Initial_state
+        self.register_buffer('initial_state', torch.rand(self.dim, requires_grad=False))
 
     def _forward(self, batch_size, lengths, embedded_inputs):
         """
@@ -418,6 +408,24 @@ class LayerRecurrent(LayerLinear):
         # print("STATES AFTER", states.shape) # XXX
         
         return states, lengths
+    
+    def warm_up(self, warm_up_sequence, return_states=False):
+        """
+        Performs forward pass of an input sequence and set last layer state as new initial state.
+
+        Parameters
+        ----------
+        warm_up_sequence : torch.Tensor
+            1D tensor: word indices of the warm up sentence.
+        """
+        
+        # Process text into the layer
+        warm_states, warm_sentence_length = self.forward(warm_up_sequence)
+        # Remove first dimension and take last valid state
+        self.initial_state = warm_states[0, warm_sentence_length - 1, :].reshape(-1)
+
+        if return_states:
+            return warm_states
 
 
 def create_layer(mode='recurrent_layer', **kwargs):
@@ -581,9 +589,6 @@ class DeepLayer(Layer):
         warm_up_sequence : torch.Tensor
             1D tensor: word indices of the warm up sentence.
         """
-
-        # Add a first dimension to sequence to match 2D input batch format
-        warm_up_sequence = warm_up_sequence.unsqueeze(1)
 
         # Process text into the sequence of reservoirs
         warm_states, warm_sentence_length = self.forward(warm_up_sequence)
