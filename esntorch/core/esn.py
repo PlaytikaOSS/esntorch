@@ -176,7 +176,8 @@ class EchoStateNetwork(nn.Module):
                 final_states = torch.cat([normal_merged_states, reversed_merged_states], dim=1)
         else:
             final_states = self.merging_strategy(states, lengths, texts, additional_fts)
-
+        
+        print("FINAL STATES", final_states.shape) # XXX
         return final_states
 
     def _fit_direct(self, train_dataloader):

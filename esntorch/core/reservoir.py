@@ -42,6 +42,7 @@ class Layer(nn.Module):
 
     def __init__(self,
                  embedding_weights=None,
+                 input_dim=None,
                  seed=42,
                  device=torch.device('cpu'),
                  **kwargs):
@@ -50,7 +51,7 @@ class Layer(nn.Module):
 
         torch.manual_seed(seed)
         self.device = device
-
+        
         # Set embeddings
         # TorchText (embedding weights)
         if (embedding_weights is not None) and torch.is_tensor(embedding_weights):
@@ -65,13 +66,16 @@ class Layer(nn.Module):
         elif isinstance(embedding_weights, str):
             self.HuggingFaceEmbedding = emb.EmbeddingModel(embedding_weights, device)
             self.embedding = lambda batch: self.HuggingFaceEmbedding.get_embedding(batch)
+            self.input_dim = self.HuggingFaceEmbedding.model.config.hidden_size
 
-        # XXX
-#         # No embedding, for deep
-#         else:
-#             self.embedding = None
+        # Deep ESNs # XXX2
+        elif embedding_weights is None:
+            self.embedding = None       # no embedding for a deep reservoir
+            self.input_dim = input_dim  # in this case input_dim is considered
+            
+        self.dim = 0
+
         
-
     def _embed(self, batch):
 
         if callable(self.embedding):
@@ -148,26 +152,28 @@ class LayerLinear(Layer):
 
     # Constructor
     def __init__(self,
-                 embedding_weights=None,
-                 input_dim=None,
+                 # embedding_weights=None, # XXX2
+                 # input_dim=None, # XXX
                  input_scaling=None,
                  dim=None,
                  bias_scaling=None,
                  activation_function='tanh',
-                 seed=42,
-                 device=torch.device('cpu'),
-                 **kwargs
+#                  seed=42, # XXX2
+#                  device=torch.device('cpu'), # XXX2
+                 **kwargs # XXX2
                  ):
 
-        super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
+        # super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
+        super().__init__(**kwargs) # XXX2
 
         # Scalings
         self.input_scaling = input_scaling
         self.bias_scaling = bias_scaling
 
         # Input and layer dim
-        self.input_dim = input_dim
+        # self.input_dim = input_dim # XXX
         self.dim = dim
+        print("dim and input_dim", self.dim, self.input_dim) # XXX2
 
         # Activation function
         if activation_function == 'tanh':
@@ -443,6 +449,32 @@ def create_layer(mode='recurrent_layer', **kwargs):
     else:
         raise ValueError('wrong mode')
 
+        
+        
+def get_parameters(nb_layers=1, index=0, **kwargs):
+
+    new_kwargs = {}
+
+    for key, value in kwargs.items():
+
+        if isinstance(value, list) or isinstance(value, tuple):
+            if len(value) != nb_layers:
+                raise TypeError('Number of parameters and number of layers do not match...')
+            else:
+                new_kwargs[key] = value[index]
+
+        elif value is None:
+            pass
+
+        else:
+            new_kwargs[key] = value
+    
+    if index > 0:
+        new_kwargs['embedding_weights'] = None
+
+    return new_kwargs
+
+
 
 class DeepLayer(Layer):
     """
@@ -487,52 +519,64 @@ class DeepLayer(Layer):
     # Constructor
     def __init__(self,
                  nb_layers=1,
-                 embedding_weights=None,
-                 seed=42,
-                 device=torch.device('cpu'),
+#                  embedding_weights=None,
+#                  seed=42,
+#                  device=torch.device('cpu'),
                  **kwargs
                  ):
 
-        super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
-
+        # super().__init__(embedding_weights=embedding_weights, seed=seed, device=device) # XXX2
+        super().__init__(**kwargs)
+        
         self.nb_layers = nb_layers
-        self.embedding_weights = embedding_weights
+        print("**kwargs", kwargs) # XXX2
+        # self.embedding_weights = embedding_weights # XXX2
 
-        def get_parameters(index):
+        # XXX2
+#         def get_parameters(index):
                         
-            new_kwargs = {}
+#             new_kwargs = {}
             
-            for key, value in kwargs.items():
+#             for key, value in kwargs.items():
                 
-#                 if key == 'input_dim':
-#                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
+# #                 if key == 'input_dim':
+# #                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
                     
-#                 if key == 'embedding_weights':
-#                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
+# #                 if key == 'embedding_weights':
+# #                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
                     
-                if isinstance(value, list) or isinstance(value, tuple):
-                    if len(value) != nb_layers:
-                        raise TypeError('Number of parameters and number of layers do not match...')
-                    else:
-                        new_kwargs[key] = value[index]
+#                 if isinstance(value, list) or isinstance(value, tuple):
+#                     if len(value) != nb_layers:
+#                         raise TypeError('Number of parameters and number of layers do not match...')
+#                     else:
+#                         new_kwargs[key] = value[index]
                 
-                elif value is None:
-                    pass
+#                 elif value is None:
+#                     pass
                 
-                else:
-                    new_kwargs[key] = value
+#                 else:
+#                     new_kwargs[key] = value
             
-            new_kwargs['device'] = self.device # XXX
-            # new_kwargs['embedding_weights'] = self.embedding_weights if index == 0 else None # XXX
-            new_kwargs['input_dim'] = self.layers[index - 1].dim if index > 0 else kwargs['input_dim'] # XXX
+#             new_kwargs['device'] = self.device # XXX
+#             new_kwargs['embedding_weights'] = self.embedding_weights if index == 0 else None # XXX2
+#             new_kwargs['input_dim'] = self.layers[index - 1].dim if index > 0 else None # XXX2
                         
-            return new_kwargs
+#             return new_kwargs
 
         # Generate all reservoirs composing the deep layer
         self.layers = []
 
         for i in range(self.nb_layers):
-            self.layers.append(create_layer(**get_parameters(i)))
+            if i > 0:
+                kwargs['input_dim'] = self.layers[i-1].dim
+                print("\n\n INPUT DIM \n\n", kwargs['input_dim'])
+            # self.layers.append(create_layer(**get_parameters(i))) # XXX2
+            print("\ni, parameters\n", i, get_parameters(self.nb_layers, i, **kwargs))
+            # input_dim = self.layers[i-1].dim if i > 0 else None # XXX2
+            # layer = create_layer(input_dim=input_dim, **get_parameters(i)) # XXX2
+            layer = create_layer(**get_parameters(self.nb_layers, i, **kwargs))   # XXX2!
+            print("input dim after creation", layer.input_dim)
+            self.layers.append(layer)
 
         # Put buffer variables of the layers to device # XXX
         for layer in self.layers:
