@@ -124,7 +124,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
         'learning_algo': None,         # initialzed below
         'criterion': None,             # initialzed below
         'optimizer': None,             # initialzed below
-        'merging_strategy': 'mean',    # 'mean', 'last', None
+        'pooling_strategy': 'mean',    # 'mean', 'last', None
         'bidirectional': bidirectional,
         'device': device,
         'mode': 'recurrent_layer',     # 'no_layer, 'linear_layer', 'recurrent_layer'

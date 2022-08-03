@@ -24,14 +24,14 @@ from transformers import BatchEncoding
 import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
-import esntorch.core.merging_strategy as ms
+import esntorch.core.pooling_strategy as ps
 from tqdm.notebook import tqdm_notebook
 
 
 class EchoStateNetwork(nn.Module):
     """
     Implements the Echo State Network (ESN) per se.
-    An ESN consists of the combination of a layer, a merging strategy and a learning algorithm.
+    An ESN consists of the combination of a layer, a pooling strategy and a learning algorithm.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ class EchoStateNetwork(nn.Module):
         Criterion used to compute the loss between tagets and predictions (only if leaning_algo ≠ RidgeRegression).
     optimizer : torch.optim
         Optimizer used in the gradient descent method (only if leaning_algo ≠ RidgeRegression).
-    merging_strategy : src.models.merging_strategy.MergingStrategy
+    pooling_strategy : src.models.pooling_strategy.Pooling
         Merging strategy used to merge the sucessive layer states.
     bidirectional : bool
         Flag for bi-directionality.
@@ -88,7 +88,7 @@ class EchoStateNetwork(nn.Module):
                  learning_algo=None,
                  criterion=None,
                  optimizer=None,
-                 merging_strategy=None,
+                 pooling_strategy=None,
                  bidirectional=False,
                  lexicon=None,
                  deep=False,
@@ -104,7 +104,7 @@ class EchoStateNetwork(nn.Module):
         else:
             self.layer = res.create_layer(device=device, **kwargs)
 
-        self.merging_strategy = ms.MergingStrategy(merging_strategy, lexicon=lexicon)
+        self.pooling_strategy = ps.Pooling(pooling_strategy, lexicon=lexicon)
 
         self.learning_algo = learning_algo
         self.criterion = criterion
@@ -135,7 +135,7 @@ class EchoStateNetwork(nn.Module):
     def _apply_pooling_strategy(self, states, lengths, texts,
                                 reversed_states=None, additional_fts=None):
         """
-        Merges the corresponding layer states depending on the merging strategy
+        Merges the corresponding layer states depending on the pooling strategy
         and the whether to apply bi-directionality or not.
 
         Parameters
@@ -159,23 +159,23 @@ class EchoStateNetwork(nn.Module):
             2D tensor : the merged tensors.
         """
         if self.bidirectional:
-            if self.merging_strategy.merging_strategy is None:
+            if self.pooling_strategy.pooling_strategy is None:
                 # concatenate the normal and reversed states along the layer dimension while not
-                # forgetting to first put the reversed words in the correct order, then apply the merging.
+                # forgetting to first put the reversed words in the correct order, then apply the pooling.
                 restored_states = reversed_states.clone()
                 for i, l in enumerate(lengths):
                     restored_states[i, :l] = torch.flip(restored_states[i, :l], [0])
 
                 concatenated_states = torch.cat([states, restored_states], dim=2)
-                final_states = self.merging_strategy(concatenated_states, lengths, texts)
+                final_states = self.pooling_strategy(concatenated_states, lengths, texts)
             else:
-                # concatenate the normal and reversed states after their merging
-                normal_merged_states = self.merging_strategy(states, lengths, texts, additional_fts)
-                reversed_merged_states = self.merging_strategy(reversed_states, lengths, texts)
+                # concatenate the normal and reversed states after their pooling
+                normal_merged_states = self.pooling_strategy(states, lengths, texts, additional_fts)
+                reversed_merged_states = self.pooling_strategy(reversed_states, lengths, texts)
                 # concatenate the batches across features dimension
                 final_states = torch.cat([normal_merged_states, reversed_merged_states], dim=1)
         else:
-            final_states = self.merging_strategy(states, lengths, texts, additional_fts)
+            final_states = self.pooling_strategy(states, lengths, texts, additional_fts)
         
         return final_states
 
@@ -222,11 +222,11 @@ class EchoStateNetwork(nn.Module):
 
             labels = batch_label
 
-            # if merging_strategy is None: duplicate labels
-            if self.merging_strategy.merging_strategy is None:
+            # if pooling_strategy is None: duplicate labels
+            if self.pooling_strategy.pooling_strategy is None:
                 labels = mat.duplicate_labels(labels, lengths)
 
-            # apply the correct merging strategy and bi-directionality if needed.
+            # apply the correct pooling strategy and bi-directionality if needed.
             final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                         reversed_states, additional_fts)
             states_l.append(final_states)
@@ -290,11 +290,11 @@ class EchoStateNetwork(nn.Module):
                     reversed_states, _ = self.layer.reverse_forward(batch_text)
 
                 labels = batch_label.type(torch.int64)  # labels (converted to int for the loss)
-                # if merging_strategy is None: duplicate labels
-                if self.merging_strategy.merging_strategy is None:
+                # if pooling_strategy is None: duplicate labels
+                if self.pooling_strategy.pooling_strategy is None:
                     labels = mat.duplicate_labels(labels, lengths)
 
-                # apply the correct merging strategy and bi-directionality if needed.
+                # apply the correct pooling strategy and bi-directionality if needed.
                 final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                             reversed_states, additional_fts)
 
@@ -323,7 +323,7 @@ class EchoStateNetwork(nn.Module):
         """
         Fits the ESN on the training set. Fitting is performed according to:
         1) a learning algorithm;
-        2) a merging strategy.
+        2) a pooling strategy.
 
         Parameters
         ----------
@@ -357,13 +357,13 @@ class EchoStateNetwork(nn.Module):
     def _compute_predictions(self, states, lengths):
         """
         Takes layer states, passes them to the learning algorithm and computes predictions out of them.
-        Predictions are computed differently depending on whether the merging strategy is None or not.
-        If merging strategy is None, the predictions are computed as follows:
+        Predictions are computed differently depending on whether the pooling strategy is None or not.
+        If pooling strategy is None, the predictions are computed as follows:
         For each input sentence u:
         (1) the corresponding layer states X_u are passed through the learning algorithm;
         (2) the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
         (3) the prediction is arg_max(y_u).
-        If merging strategy is not None, the predictions are computed as follows:
+        If pooling strategy is not None, the predictions are computed as follows:
         For each input sentence u:
         (1) the corresponding merged layer state x_u is passed through the learning algorithm,
         yielding a 1-dim tensor y_u;
@@ -384,7 +384,7 @@ class EchoStateNetwork(nn.Module):
 
         raw_outputs = self.learning_algo(states)
 
-        if self.merging_strategy.merging_strategy is None:  # merging strategy is None
+        if self.pooling_strategy.pooling_strategy is None:  # pooling strategy is None
 
             # tmp = list(lengths.numpy())
             # tmp = [sum(tmp[:i]) - 1 for i in range(1, len(tmp) + 1)]
@@ -395,7 +395,7 @@ class EchoStateNetwork(nn.Module):
             outputs = torch.stack([torch.mean(raw_outputs[tmp[i]:tmp[i + 1]], dim=0) for i in range(len(tmp) - 1)])
             predictions = outputs.argmax(dim=1)
 
-        else:  # merging strategy is not None
+        else:  # pooling strategy is not None
             if raw_outputs.dim() != 1:  # the learning algo returns the probas
                 outputs = raw_outputs.argmax(dim=1).float()
             else:  # the learning algo returns the classes
@@ -447,7 +447,7 @@ class EchoStateNetwork(nn.Module):
             if self.bidirectional:
                 reversed_states, _ = self.layer.reverse_forward(batch_text)
 
-            # apply the correct merging strategy and bi-directionality if needed.
+            # apply the correct pooling strategy and bi-directionality if needed.
             final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                         reversed_states, additional_fts)
 

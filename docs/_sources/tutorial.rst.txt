@@ -41,7 +41,7 @@ Librairies
     
     import esntorch.core.reservoir as res
     import esntorch.core.learning_algo as la
-    import esntorch.core.merging_strategy as ms
+    import esntorch.core.merging_strategy as ps
     import esntorch.core.esn as esn
 
 .. code:: ipython3

@@ -23,39 +23,39 @@ from torch.autograd import Variable
 # from src.utils.matrix import crazysoftmax
 
 
-class MergingStrategy:
+class Pooling:
     """
-    Implements various merging strategies - or pooling layers - for grouping successive ESN states.
+    Implements various pooling strategies - or pooling layers - for grouping successive ESN states.
 
     Parameters
     ----------
-    merging_strategy : None, str
-        The possible merging strategies are: None, 'first', 'last', mean', 'weighted', 'lexicon_weighted'.
-        None: collects all the ESN states (no merging).
+    pooling_strategy : None, str
+        The possible pooling strategies are: None, 'first', 'last', mean', 'weighted', 'lexicon_weighted'.
+        None: collects all the ESN states (no pooling).
         'first': takes the first ESN state.
         'last': takes the last ESN state.
         'mean': takes the mean of ESN states.
         'weighted': takes a weighted mean of ESN states.
         'lexicon_weighted': takes a weighted mean of ESN states, where the words' weights are given by a lexicon.
     weights : torch.Tensor
-        Weights to be considered for the weighted mean merging strategy.
+        Weights to be considered for the weighted mean pooling strategy.
         If weights == None (default), computes attention-like weights.
         If weights != None, uses the given weights.
     """
 
     # Constructor
-    def __init__(self, merging_strategy=None, weights=None, lexicon=None):
+    def __init__(self, pooling_strategy=None, weights=None, lexicon=None):
         """
         Parameters
         ----------
-        merging_strategy : None, str
+        pooling_strategy : None, str
         weights : None, torch.Tensor
             If not None, 2D tensor
         lexicon: None, torch.Tensor
             If not None, 1D tensor containing the lexicon weight of each word id in the vocabulary
         """
 
-        self.merging_strategy = merging_strategy
+        self.pooling_strategy = pooling_strategy
 
         if weights is not None:
             self.weights = Variable(weights, requires_grad=False)
@@ -82,13 +82,13 @@ class MergingStrategy:
             2D tensor containing merged ESN states (batch size x layer dim).
         """
 
-        merged_states = self.merge_batch(states, lengths, texts, self.merging_strategy, self.weights, additional_fts)
+        merged_states = self.merge_batch(states, lengths, texts, self.pooling_strategy, self.weights, additional_fts)
 
         return merged_states
 
-    def merge_batch(self, states_batch, lengths, texts, merging_strategy=None, weights=None, additional_fts=None):
+    def merge_batch(self, states_batch, lengths, texts, pooling_strategy=None, weights=None, additional_fts=None):
         """
-        Implements the different merging strategies: None, 'first', 'last', 'mean', 'weighted'.
+        Implements the different pooling strategies: None, 'first', 'last', 'mean', 'weighted'.
 
         Parameters
         ----------
@@ -98,7 +98,7 @@ class MergingStrategy:
             1D tensor containing the length of each text in the batch: (batch size).
         texts: torch.Tensor
             2D tensor containing the word indices of the texts in the batch (max text length x batch size).
-        merging_strategy : None, str
+        pooling_strategy : None, str
             None, 'first', 'last', 'mean', 'weighted'.
         weights : None, torch.Tensor
             2D tensor containing the weights for each state (batch size x max text length).
@@ -109,29 +109,29 @@ class MergingStrategy:
         Returns
         -------
         merged_states : torch.Tensor
-            If merging_strategy is not None, 2D tensor containing the merged states: (batch size x layer dim).
-            If merging_strategy is None, 2D tensor containing all states: (Sum_i len(state_i) x layer dim).
+            If pooling_strategy is not None, 2D tensor containing the merged states: (batch size x layer dim).
+            If pooling_strategy is None, 2D tensor containing all states: (Sum_i len(state_i) x layer dim).
         """
 
         # None: takes all (non-null) ESN states
-        if merging_strategy is None:
+        if pooling_strategy is None:
             merged_states = torch.cat([states_batch[i, :j+1, :] for i, j in enumerate(lengths - 1)], dim=0)
 
         # 'first': takes the first ESN state
-        elif merging_strategy == "first":
+        elif pooling_strategy == "first":
             merged_states = states_batch[:, 0, :]
 
         # 'last': takes the last ESN state
-        elif merging_strategy == "last":
+        elif pooling_strategy == "last":
             merged_states = torch.stack([states_batch[i, j, :] for i, j in enumerate(lengths - 1)], dim=0)
 
         # 'mean': takes the mean of ESN states
-        elif merging_strategy == "mean":
+        elif pooling_strategy == "mean":
             lengths = lengths.expand(states_batch.size()[2], -1).transpose(0, 1)
             merged_states = torch.div(torch.sum(states_batch, dim=1), lengths)
 
         # 'weighted': takes a weighted mean of ESN states
-        elif merging_strategy == "weighted":
+        elif pooling_strategy == "weighted":
             if weights is None:
                 # weights are the states' norms
                 weights = Variable(torch.norm(states_batch, dim=2), requires_grad=False)
@@ -154,9 +154,9 @@ class MergingStrategy:
             merged_states = states_batch * weights.unsqueeze(2).expand(states_batch.size())
             merged_states = merged_states.sum(dim=1)
 
-        elif merging_strategy == "lexicon_weighted":
+        elif pooling_strategy == "lexicon_weighted":
             if self.lexicon is None:
-                raise Exception('With the lexicon_weighted merging strategy, you should pass a lexicon tensor!')
+                raise Exception('With the lexicon_weighted pooling strategy, you should pass a lexicon tensor!')
 
             weights = self.lexicon[texts]
 
@@ -168,13 +168,13 @@ class MergingStrategy:
             # merged_states /= lengths.unsqueeze(1).repeat(1, states_batch.size()[2])
 
         # 'mean_and_additional_fts': takes the mean of ESN states and concatenates new features
-        elif merging_strategy == "mean_and_additional_fts":
+        elif pooling_strategy == "mean_and_additional_fts":
             lengths = lengths.expand(states_batch.size()[2], -1).transpose(0, 1)
             merged_states = torch.div(torch.sum(states_batch, dim=1), lengths)
             if additional_fts is not None:
                 merged_states = torch.cat([merged_states, additional_fts], dim=1)
 
         else:
-            raise Exception('Unknown merging strategy used')
+            raise Exception('Unknown pooling strategy used')
 
         return merged_states

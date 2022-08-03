@@ -42,7 +42,7 @@ import pytest
 
 # We train an ESN with the different learning algorithms on 20% of the TREC dataset.
 # We test whether the train and test perfromance is higher than 70%.
-import esntorch.core.merging_strategy
+import esntorch.core.pooling_strategy
 
 
 @pytest.fixture()
@@ -123,7 +123,7 @@ def instantiate_esn(**kwargs):
         'learning_algo': None,  # initialzed below
         'criterion': None,      # initialzed below
         'optimizer': None,      # initialzed below
-        'merging_strategy': 'mean',
+        'pooling_strategy': 'mean',
         'bidirectional': False,
         'device': device,
         'seed': 42345,

@@ -118,7 +118,7 @@ def instantiate_esn(**kwargs):
         'learning_algo': None,  # initialzed below
         'criterion': None,      # initialzed below
         'optimizer': None,      # initialzed below
-        'merging_strategy': 'mean',
+        'pooling_strategy': 'mean',
         'bidirectional': False,
         'device': device,
         'seed': 42345,
