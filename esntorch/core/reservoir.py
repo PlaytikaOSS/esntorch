@@ -32,7 +32,7 @@ class Layer(nn.Module):
 
     Parameters
     ----------
-    embedding_weights : torch.Tensor
+    embedding : torch.Tensor
         Embedding matrix.
     seed : torch._C.Generator
         Random seed.
@@ -41,7 +41,7 @@ class Layer(nn.Module):
     """
 
     def __init__(self,
-                 embedding_weights=None,
+                 embedding=None,
                  input_dim=None,
                  seed=42,
                  device=torch.device('cpu'),
@@ -54,22 +54,22 @@ class Layer(nn.Module):
         
         # Set embeddings
         # TorchText (embedding weights)
-        if (embedding_weights is not None) and torch.is_tensor(embedding_weights):
-            vocab_size, embed_dim = embedding_weights.size()
+        if (embedding is not None) and torch.is_tensor(embedding):
+            vocab_size, embed_dim = embedding.size()
             self.embedding = nn.Embedding(vocab_size, embed_dim).requires_grad_(False)
-            self.embedding.weight.data.copy_(embedding_weights)
+            self.embedding.weight.data.copy_(embedding)
 
             # Assign a random embedding to the <unk> token
             self.embedding.weight.data[0] = torch.rand(embed_dim)
 
         # HuggingFace (embedding function)
-        elif isinstance(embedding_weights, str):
-            self.HuggingFaceEmbedding = emb.EmbeddingModel(embedding_weights, device)
+        elif isinstance(embedding, str):
+            self.HuggingFaceEmbedding = emb.EmbeddingModel(embedding, device)
             self.embedding = lambda batch: self.HuggingFaceEmbedding.get_embedding(batch)
             self.input_dim = self.HuggingFaceEmbedding.model.config.hidden_size
 
         # Deep ESNs # XXX2
-        elif embedding_weights is None:
+        elif embedding is None:
             self.embedding = None       # no embedding for a deep reservoir
             self.input_dim = input_dim  # in this case input_dim is considered
             
@@ -131,7 +131,7 @@ class LayerLinear(Layer):
 
     Parameters
     ----------
-    embedding_weights : torch.Tensor
+    embedding : torch.Tensor
         Embedding matrix.
     input_dim : int
         Input dimension.
@@ -152,7 +152,7 @@ class LayerLinear(Layer):
 
     # Constructor
     def __init__(self,
-                 # embedding_weights=None, # XXX2
+                 # embedding=None, # XXX2
                  # input_dim=None, # XXX
                  input_scaling=None,
                  dim=None,
@@ -163,7 +163,7 @@ class LayerLinear(Layer):
                  **kwargs # XXX2
                  ):
 
-        # super().__init__(embedding_weights=embedding_weights, seed=seed, device=device)
+        # super().__init__(embedding=embedding, seed=seed, device=device)
         super().__init__(**kwargs) # XXX2
 
         # Scalings
@@ -258,7 +258,7 @@ class LayerRecurrent(LayerLinear):
 
     Parameters
     ----------
-    embedding_weights : torch.Tensor
+    embedding : torch.Tensor
         Embedding matrix.
     input_dim : int
         Input dimension.
@@ -466,7 +466,7 @@ def get_parameters(nb_layers=1, index=0, **kwargs):
             new_kwargs[key] = value
     
     if index > 0:
-        new_kwargs['embedding_weights'] = None
+        new_kwargs['embedding'] = None
 
     return new_kwargs
 
@@ -481,7 +481,7 @@ class DeepLayer(Layer):
     ----------
     nb_layers : int
         Number of reservoirs composing the deep layer.
-    embedding_weights : torch.Tensor
+    embedding : torch.Tensor
         Embedding matrix for the *first* layer layer only (a priori).
     distributions : list of str
         List of distributions ('uniform' or 'gaussian' of the reservoirs)
@@ -515,18 +515,18 @@ class DeepLayer(Layer):
     # Constructor
     def __init__(self,
                  nb_layers=1,
-#                  embedding_weights=None,
+#                  embedding=None,
 #                  seed=42,
 #                  device=torch.device('cpu'),
                  **kwargs
                  ):
 
-        # super().__init__(embedding_weights=embedding_weights, seed=seed, device=device) # XXX2
+        # super().__init__(embedding=embedding, seed=seed, device=device) # XXX2
         super().__init__(**kwargs)
         
         self.nb_layers = nb_layers
         # print("**kwargs", kwargs) # XXX2
-        # self.embedding_weights = embedding_weights # XXX2
+        # self.embedding = embedding # XXX2
 
         # XXX2
 #         def get_parameters(index):
@@ -538,7 +538,7 @@ class DeepLayer(Layer):
 # #                 if key == 'input_dim':
 # #                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
                     
-# #                 if key == 'embedding_weights':
+# #                 if key == 'embedding':
 # #                     new_kwargs[key] = self.layers[index - 1].dim if index > 0 else value
                     
 #                 if isinstance(value, list) or isinstance(value, tuple):
@@ -554,7 +554,7 @@ class DeepLayer(Layer):
 #                     new_kwargs[key] = value
             
 #             new_kwargs['device'] = self.device # XXX
-#             new_kwargs['embedding_weights'] = self.embedding_weights if index == 0 else None # XXX2
+#             new_kwargs['embedding'] = self.embedding if index == 0 else None # XXX2
 #             new_kwargs['input_dim'] = self.layers[index - 1].dim if index > 0 else None # XXX2
                         
 #             return new_kwargs

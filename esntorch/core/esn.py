@@ -35,7 +35,7 @@ class EchoStateNetwork(nn.Module):
 
     Parameters
     ----------
-    embedding_weights : torch.Tensor
+    embedding : torch.Tensor
         Embedding matrix.
     distribution : str
         Distribution of the layer: 'uniform' or 'gaussian'

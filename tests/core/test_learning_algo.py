@@ -110,7 +110,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
 
     # ESN parameters
     esn_params = {
-        'embedding_weights': 'bert-base-uncased',
+        'embedding': 'bert-base-uncased',
         'distribution': 'uniform',     # uniform, gaussian
         'dim': 1000,
         'bias_scaling': 0.,

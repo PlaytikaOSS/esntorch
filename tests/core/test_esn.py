@@ -110,7 +110,7 @@ def instantiate_esn(**kwargs):
 
     # ESN parameters
     esn_params = {
-        'embedding_weights': 'bert-base-uncased',
+        'embedding': 'bert-base-uncased',
         'dim': 1000,
         'bias_scaling': 0.1,
         'sparsity': 0.,
