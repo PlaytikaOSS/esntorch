@@ -26,15 +26,17 @@
 # Also, use torch version 1.7.1: some functions do not work with torch version 1.9.0
 # ---------------
 # To launch this test file only, run the following command:
-# pytest tests/core/test_merging_strategy.py
+# pytest tests/core/test_esn.py
 # To launch all tests inside /esntorch/core/ with line coverage, run the following command:
 # pytest --cov tests/core/
 # *** END INSTRUCTIONS ***
+
 import torch
 from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
 from transformers.data.data_collator import DataCollatorWithPadding
 import esntorch.core.learning_algo as la
+import esntorch.core.reservoir as res
 import esntorch.core.esn as esn
 import pytest
 
@@ -75,9 +77,13 @@ def create_dataset():
         dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels', 'lengths'])
 
         return dataset
-
+    
+    # Device
+    global device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     # Load BERT tokenizer
-    global tokenizer
+    # global tokenizer
     tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
 
     # Load and prepare data
@@ -102,25 +108,21 @@ def create_dataset():
 def instantiate_esn(**kwargs):
     """Train ESN with a designated learning algorithm."""
 
-    # Device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'input_dim': 768,  # dim of BERT encoding!
         'dim': 1000,
-        'bias_scaling': 0.,  # 1.0742377381236705,
+        'bias_scaling': 0.1,
         'sparsity': 0.,
-        'spectral_radius': None,  # 0.7094538192983408,
+        'spectral_radius': None, 
         'leaking_rate': 0.17647315261153904,
         'activation_function': 'tanh',
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
         'learning_algo': None,  # initialzed below
-        'criterion': None,  # initialzed below
-        'optimizer': None,  # initialzed below
+        'criterion': None,      # initialzed below
+        'optimizer': None,      # initialzed below
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
@@ -141,28 +143,20 @@ def instantiate_esn(**kwargs):
 
 
 def warm_up(ESN, dataset_d):
-    # Warm up the ESN on multiple sentences
-    nb_sentences = 10
-
-    for i in range(nb_sentences):
-        sentence = dataset_d["train"].select([i])
-        dataloader_tmp = torch.utils.data.DataLoader(sentence,
-                                                     batch_size=1,
-                                                     collate_fn=DataCollatorWithPadding(tokenizer))
-        for sentence in dataloader_tmp:
-            ESN.warm_up(sentence)
+    if isinstance(ESN.layer, res.LayerRecurrent):
+        ESN.warm_up(dataset_d['train'].select(range(10)))
 
 
 def predict_esn(ESN, dataloader_d):
     # Train predictions and accuracy
     print("Predict on train set")
     train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    train_acc = train_acc.item() if ESN.device.type == 'cuda' else train_acc
+    # train_acc = train_acc.item() if ESN.device.type == 'cuda' else train_acc
 
     # Test predictions and accuracy
     print("Predict on test set")
     test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
-    test_acc = test_acc.item() if ESN.device.type == 'cuda' else test_acc
+    # test_acc = test_acc.item() if ESN.device.type == 'cuda' else test_acc
 
     return train_pred, train_acc, test_pred, test_acc
 
@@ -178,6 +172,7 @@ def test_warm_up(create_dataset):
 
 
 def test_fit_and_predict(create_dataset):
+    
     def test(**kwargs):
         if kwargs['deep']:
             la_input_dim = kwargs['nb_layers'] * kwargs['dim']
@@ -190,6 +185,7 @@ def test_fit_and_predict(create_dataset):
         # test fit via _fit_direct
         ESN.learning_algo = la.RidgeRegression(alpha=7.843536845714804)
         weights_before_fit = ESN.learning_algo.weights
+        ESN = ESN.to(device)
         assert weights_before_fit is None
         ESN.fit(dataloader_d["train"])
         weights_after_fit = ESN.learning_algo.weights
@@ -203,12 +199,12 @@ def test_fit_and_predict(create_dataset):
 
         # test fit via _fit_GD
         ESN.learning_algo = la.LogisticRegression(input_dim=la_input_dim, output_dim=6)
-        weights_before_fit = ESN.learning_algo.linear.weight.clone()
+        weights_before_fit = ESN.learning_algo.linear.weight.clone().to(device)
         ESN.criterion = torch.nn.CrossEntropyLoss()
         ESN.optimizer = torch.optim.Adam(ESN.learning_algo.parameters(), lr=0.01)
+        ESN = ESN.to(device)
         ESN.fit(dataloader_d["train"], epochs=1, iter_steps=10)
         weights_after_fit = ESN.learning_algo.linear.weight
-        print(weights_before_fit.shape, weights_after_fit.shape)
         assert (weights_before_fit != weights_after_fit).any()
 
         # test predict

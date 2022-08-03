@@ -26,7 +26,7 @@
 # Also, use torch version 1.7.1: some functions do not work with torch version 1.9.0
 # ---------------
 # To launch this test file only, run the following command:
-# pytest tests/core/test_merging_strategy.py
+# pytest tests/core/test_reservoir.py
 # To launch all tests inside /esntorch/core/ with line coverage, run the following command:
 # pytest --cov tests/core/
 # *** END INSTRUCTIONS ***
@@ -36,6 +36,7 @@ from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
 from transformers.data.data_collator import DataCollatorWithPadding
 import esntorch.core.learning_algo as la
+import esntorch.core.reservoir as res
 import esntorch.core.esn as esn
 import pytest
 
@@ -105,19 +106,18 @@ def instantiate_esn(**kwargs):
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'input_dim': 768,  # dim of BERT encoding!
         'dim': 1000,
-        'bias_scaling': 0.,  # 1.0742377381236705,
+        'bias_scaling': 0.,
         'sparsity': 0.,
-        'spectral_radius': None,  # 0.7094538192983408,
+        'spectral_radius': None,
         'leaking_rate': 0.17647315261153904,
         'activation_function': 'relu',
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
         'learning_algo': None,  # initialzed below
-        'criterion': None,  # initialzed below
-        'optimizer': None,  # initialzed below
+        'criterion': None,      # initialzed below
+        'optimizer': None,      # initialzed below
         'merging_strategy': 'mean',
         'bidirectional': False,
         'device': device,
@@ -138,16 +138,8 @@ def instantiate_esn(**kwargs):
 
 
 def warm_up(ESN, dataset_d):
-    # Warm up the ESN on multiple sentences
-    nb_sentences = 10
-
-    for i in range(nb_sentences):
-        sentence = dataset_d["train"].select([i])
-        dataloader_tmp = torch.utils.data.DataLoader(sentence,
-                                                     batch_size=1,
-                                                     collate_fn=DataCollatorWithPadding(tokenizer))
-        for sentence in dataloader_tmp:
-            ESN.warm_up(sentence)
+    if isinstance(ESN.layer, res.LayerRecurrent):
+        ESN.warm_up(dataset_d['train'].select(range(10)))
 
 
 def is_uniform(layer):
@@ -156,13 +148,13 @@ def is_uniform(layer):
     assert layer.layer_w.shape == (layer.dim, layer.dim)
     # assert uniform distribution
     for i in range(5):
-        assert torch.sum(weights <= -1 + i * 2 / 5) == pytest.approx(i / 5 * layer.dim ** 2, 0.05)
+        assert torch.sum(weights <= -1 + i * 2 / 5).cpu() == pytest.approx(i / 5 * layer.dim ** 2, 0.05)
 
 
 def is_gaussian(layer):
     weights = layer.layer_w.view(-1)
-    assert torch.mean(weights) == pytest.approx(layer.mean, abs=0.05)
-    assert torch.std(weights) == pytest.approx(layer.std, 0.05)
+    assert torch.mean(weights).cpu() == pytest.approx(layer.mean, abs=0.05)
+    assert torch.std(weights).cpu() == pytest.approx(layer.std, 0.05)
 
 
 def test_UniformReservoir():

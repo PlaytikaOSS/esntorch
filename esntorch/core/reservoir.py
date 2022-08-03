@@ -173,7 +173,6 @@ class LayerLinear(Layer):
         # Input and layer dim
         # self.input_dim = input_dim # XXX
         self.dim = dim
-        print("dim and input_dim", self.dim, self.input_dim) # XXX2
 
         # Activation function
         if activation_function == 'tanh':
@@ -381,7 +380,6 @@ class LayerRecurrent(LayerLinear):
 
         # States: left uninitialized to speed up things
         states = torch.empty(batch_size, lengths.max(), self.dim, dtype=torch.float32, device=self.device)
-        # print("INPUTS BEFORE", embedded_inputs.shape) # XXX
         
         # For each time step, we process all sentences in the batch concurrently
         for t in range(lengths.max()):
@@ -410,9 +408,7 @@ class LayerRecurrent(LayerLinear):
 
             # New layer state becomes current layer state
             current_reservoir_states = x_new
-        
-        # print("STATES AFTER", states.shape) # XXX
-        
+                
         return states, lengths
     
     def warm_up(self, warm_up_sequence, return_states=False):
@@ -529,7 +525,7 @@ class DeepLayer(Layer):
         super().__init__(**kwargs)
         
         self.nb_layers = nb_layers
-        print("**kwargs", kwargs) # XXX2
+        # print("**kwargs", kwargs) # XXX2
         # self.embedding_weights = embedding_weights # XXX2
 
         # XXX2
@@ -569,13 +565,10 @@ class DeepLayer(Layer):
         for i in range(self.nb_layers):
             if i > 0:
                 kwargs['input_dim'] = self.layers[i-1].dim
-                print("\n\n INPUT DIM \n\n", kwargs['input_dim'])
             # self.layers.append(create_layer(**get_parameters(i))) # XXX2
-            print("\ni, parameters\n", i, get_parameters(self.nb_layers, i, **kwargs))
             # input_dim = self.layers[i-1].dim if i > 0 else None # XXX2
             # layer = create_layer(input_dim=input_dim, **get_parameters(i)) # XXX2
             layer = create_layer(**get_parameters(self.nb_layers, i, **kwargs))   # XXX2!
-            print("input dim after creation", layer.input_dim)
             self.layers.append(layer)
 
         # Put buffer variables of the layers to device # XXX
@@ -611,7 +604,6 @@ class DeepLayer(Layer):
         states_l = []
 
         for layer in self.layers:
-            # print("NEW LAYER") # XXX
             # states, lengths = layer.forward(current_inputs)
             states, lengths = layer._forward(batch_size, lengths, current_inputs)  # XXX
             states_l.append(states)

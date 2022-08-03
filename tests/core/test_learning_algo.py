@@ -26,15 +26,17 @@
 # Also, use torch version 1.7.1: some functions do not work with torch version 1.9.0
 # ---------------
 # To launch this test file only, run the following command:
-# pytest tests/core/test_merging_strategy.py
+# pytest tests/core/test_learning_algo.py
 # To launch all tests inside /esntorch/core/ with line coverage, run the following command:
 # pytest --cov tests/core/
 # *** END INSTRUCTIONS ***
+
 import torch
 from datasets import load_dataset, DatasetDict
 from transformers import AutoTokenizer
 from transformers.data.data_collator import DataCollatorWithPadding
 import esntorch.core.learning_algo as la
+import esntorch.core.reservoir as res
 import esntorch.core.esn as esn
 import pytest
 
@@ -93,7 +95,9 @@ def create_dataset():
     # Create dataloaders
     dataloader_d = {}
     for k, v in dataset_d.items():
-        dataloader_d[k] = torch.utils.data.DataLoader(v, batch_size=256, collate_fn=DataCollatorWithPadding(tokenizer))
+        dataloader_d[k] = torch.utils.data.DataLoader(v, 
+                                                      batch_size=256, 
+                                                      collate_fn=DataCollatorWithPadding(tokenizer))
 
     return dataset_d, dataloader_d
 
@@ -107,24 +111,23 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
     # ESN parameters
     esn_params = {
         'embedding_weights': 'bert-base-uncased',
-        'distribution': 'uniform',  # uniform, gaussian
-        'input_dim': 768,  # dim of BERT encoding!
+        'distribution': 'uniform',     # uniform, gaussian
         'dim': 1000,
-        'bias_scaling': 0.,  # 1.0742377381236705,
+        'bias_scaling': 0.,
         'sparsity': 0.,
         'spectral_radius': 0.7094538192983408,
         'leaking_rate': 0.17647315261153904,
-        'activation_function': 'relu',
+        'activation_function': 'relu', # 'tanh', 'relu'
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
-        'learning_algo': None,  # initialzed below
-        'criterion': None,  # initialzed below
-        'optimizer': None,  # initialzed below
-        'merging_strategy': 'mean',
+        'learning_algo': None,         # initialzed below
+        'criterion': None,             # initialzed below
+        'optimizer': None,             # initialzed below
+        'merging_strategy': 'mean',    # 'mean', 'last', None
         'bidirectional': bidirectional,
         'device': device,
-        'mode': 'recurrent_layer',  # 'no_layer, 'linear_layer', 'recurrent_layer'
+        'mode': 'recurrent_layer',     # 'no_layer, 'linear_layer', 'recurrent_layer'
         'seed': 42
     }
 
@@ -157,29 +160,21 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
     # Put the ESN on the device (CPU or GPU)
     ESN = ESN.to(device)
 
-    # Warm up the ESN on multiple sentences
-    nb_sentences = 10
+    # Warm up ESN if necessary
+    if isinstance(ESN.layer, res.LayerRecurrent):
+        ESN.warm_up(dataset_d['train'].select(range(10)))
 
-    for i in range(nb_sentences):
-        sentence = dataset_d["train"].select([i])
-        dataloader_tmp = torch.utils.data.DataLoader(sentence,
-                                                     batch_size=1,
-                                                     collate_fn=DataCollatorWithPadding(tokenizer))
-        for sentence in dataloader_tmp:
-            ESN.warm_up(sentence)
-
-    # Training
-    # training the ESN
+    # Training ESN
     ESN.fit(dataloader_d["train"], epochs=3, iter_steps=10)  # Parameter epochs used only with LogisticRegression
 
     # Results
     # Train predictions and accuracy
     train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    train_acc = train_acc.item() if device.type == 'cuda' else train_acc
+    # train_acc = train_acc.item() if device.type == 'cuda' else train_acc # XXX
 
     # Test predictions and accuracy
     test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
-    test_acc = test_acc.item() if device.type == 'cuda' else test_acc
+    # test_acc = test_acc.item() if device.type == 'cuda' else test_acc # XXX
 
     return train_acc, test_acc
 
