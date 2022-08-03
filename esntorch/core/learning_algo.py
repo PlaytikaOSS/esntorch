@@ -36,13 +36,14 @@ class RidgeRegression(torch.nn.Module):
        Regularization parameter.
     """
 
-    # Constructor
     def __init__(self, alpha=1., mode=None):
         """
         Parameters
         ----------
         alpha : float
-        mode : None, 'normalize'
+        mode : Union[None, str]
+            Default mode is None.
+            The modes 'normalize' and 'standardize' are also possible.
         """
 
         super(RidgeRegression, self).__init__()
@@ -54,10 +55,10 @@ class RidgeRegression(torch.nn.Module):
         self.std = None
         self.L2norm = None
 
-    # Fit function
     def fit(self, X, y):
         """
-        Computes the closed form solution of the Ridge regression and update self.weights with the learned weights.
+        Computes the closed form solution of the Ridge regression
+        and update the learned weights.
 
         Parameters
         ----------
@@ -66,7 +67,7 @@ class RidgeRegression(torch.nn.Module):
         y : torch.Tensor
             Tensor of targets (gathered by rows).
         """
-                
+
         device = torch.device('cuda' if X.is_cuda else 'cpu')
 
         # Add a column of ones to X to represent the bias
@@ -84,22 +85,20 @@ class RidgeRegression(torch.nn.Module):
         y_ = torch.zeros(y.size()[0], torch.unique(y).size()[0], dtype=torch.float32, device=device)
         y_ = y_.scatter(1, y.long().unsqueeze(1), 1.0)
 
-        # tmp lines to get X_ and y_
         self.X_ = X_
         self.y_ = y_
         LI = torch.eye(X_.size()[1], device=device) * self.alpha
         Xt = torch.transpose(X_, 0, 1)
         beta = torch.mm(Xt, X_) + LI
-        beta = torch.pinverse(beta)  # use torch.pinverse() to compute pseudo-inverse via SVD.
+        beta = torch.pinverse(beta)  # compute pseudo-inverse via SVD.
         beta = torch.mm(beta, Xt)
         beta = torch.mm(beta, y_)
 
         self.weights = beta
 
-    # Forward function
     def forward(self, X):
         """
-        Computes predictions using weights obtained by fit method.
+        Computes predictions.
 
         Parameters
         ----------
@@ -129,11 +128,12 @@ class RidgeRegression(torch.nn.Module):
 
 class RidgeRegression_skl:
     """
-    Implements Ridge Regression from scikit learn.
+    Implements the Ridge Regression from scikit learn.
 
     Parameters
     ----------
         Same parameters as those of sklearn.linear_model.Ridge
+        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html
     """
 
     # Constructor
@@ -160,8 +160,8 @@ class RidgeRegression_skl:
 
     def fit(self, X, y):
         """
-        Overrides fit method of Ridge.
-        Simply convert torch tensors into numpy and apply original fit method.
+        Implements the fit method of RidgeClassifier.
+        Simply converts torch tensors into numpy arrays, and applies original fit method.
 
         Parameters
         ----------
@@ -179,11 +179,10 @@ class RidgeRegression_skl:
         y = y.numpy()
         self.RR.fit(X, y)
 
-    # Override parentheses method
     def __call__(self, X):
         """
-        Overrides parentheses method by predict method of Ridge.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
+        Overrides parentheses method by the predict method of RidgeClassifier.
+        Simply converts torch tensors into numpy arrays, and applies predict_proba method.
 
         Parameters
         ----------
@@ -193,7 +192,7 @@ class RidgeRegression_skl:
         Returns
         -------
         outputs : torch.Tensor
-            Outputs of Ridge regression
+            Outputs of the Ridge regression.
         """
 
         device = torch.device('cuda' if X.is_cuda else 'cpu')
@@ -208,7 +207,7 @@ class RidgeRegression_skl:
 
 class LinearSVC:
     """
-    Implements Linear Support Vector Machine Classifier from scikit learn.
+    Implements Linear Support Vector Machine Classifier LinearSVC from scikit learn.
 
     Parameters
     ----------
@@ -216,7 +215,6 @@ class LinearSVC:
         https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
     """
 
-    # Constructor
     def __init__(self,
                  penalty='l2',
                  loss='squared_hinge',
@@ -246,8 +244,8 @@ class LinearSVC:
 
     def fit(self, X, y):
         """
-        Overrides fit method of LinearSVC.
-        Simply convert torch tensors into numpy arrays and apply original fit method.
+        Overrides the fit method of LinearSVC.
+        Simply converts torch tensors into numpy arrays, and applies original fit method.
 
         Parameters
         ----------
@@ -265,11 +263,10 @@ class LinearSVC:
         y = y.numpy()
         self.SVC.fit(X, y)
 
-    # Override parentheses method
     def __call__(self, X):
         """
         Overrides parentheses method by predict method of LinearSVC.
-        Simply convert torch tensors into numpy arrays and apply original predict_proba method.
+        Simply converts storch tensors into numpy arrays, and applies original predict_proba method.
 
         Parameters
         ----------
@@ -279,7 +276,7 @@ class LinearSVC:
         Returns
         -------
         outputs : torch.Tensor
-            Outputs of Ridge regression
+            Outputs of the linear SVC regression.
         """
 
         device = torch.device('cuda' if X.is_cuda else 'cpu')
@@ -304,7 +301,6 @@ class LogisticRegression(torch.nn.Module):
        Output dimension.
     """
 
-    # Constructor
     def __init__(self, input_dim, output_dim):
         """
         Parameters
@@ -317,10 +313,9 @@ class LogisticRegression(torch.nn.Module):
 
         self.linear = torch.nn.Linear(input_dim, output_dim)
 
-    # Forward function
     def forward(self, x):
         """
-        Implements forward pass.
+        Implements the forward pass.
 
         Parameters
         ----------
@@ -340,14 +335,14 @@ class LogisticRegression(torch.nn.Module):
 
 class LogisticRegression_skl:
     """
-    Implements Logistic Regression from scikit learn.
+    Implements the Logistic Regression LogisticRegression from scikit learn.
 
     Parameters
     ----------
         Same parameters as those of sklearn.linear_model.LogisticRegression
+        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
     """
 
-    # Constructor
     def __init__(self,
                  penalty='l2',
                  dual=False,
@@ -383,8 +378,8 @@ class LogisticRegression_skl:
 
     def fit(self, X, y):
         """
-        Overrides fit method of LogisticRegression.
-        Simply convert torch tensors into numpy and apply original fit method.
+        Overrides the fit method of LogisticRegression.
+        Simply converts torch tensors into numpy arrays. and applies original fit method.
 
         Parameters
         ----------
@@ -402,11 +397,10 @@ class LogisticRegression_skl:
         y = y.numpy()
         self.LR.fit(X, y)
 
-    # Override parentheses method
     def __call__(self, X):
         """
         Overrides parentheses method by predict method of LogisticRegression.
-        Simply convert torch tensors into numpy and apply original predict_proba method.
+        Simply converts torch tensors into numpy arrays, and applies original predict_proba method.
 
         Parameters
         ----------
@@ -431,24 +425,25 @@ class LogisticRegression_skl:
 
 class DeepNN(torch.nn.Module):
     """
-    Implements a deep neural network whose layers are specified by a list.
+    Implements a deep neural network whose layers are specified in a list.
     Make sure that the dimensions of the first and last layers
     correspond to the input and output dimensions, respectively.
     Example: A 2-hidden layer NN with 50 neurons in each layer and input / output dimensions of 300 / 3
-    is implemented as follows: layers_l = [300, 50, 50, 3]; model = DeepNN(layers_l).
+    is implemented as follows:
+    layers_l = [300, 50, 50, 3];
+    model = DeepNN(layers_l).
 
     Parameters
     ----------
-    layers_l : list
+    layers_l : List[int]
        List of integers representing the number on neurons in each layer.
     """
 
-    # Constructor
     def __init__(self, layers_l):
         """
         Parameters
         ----------
-        layers_l : list
+        layers_l : List[int]
         """
 
         super(DeepNN, self).__init__()
@@ -458,10 +453,9 @@ class DeepNN(torch.nn.Module):
         for input_size, output_size in zip(layers_l, layers_l[1:]):
             self.hidden.append(torch.nn.Linear(input_size, output_size))
 
-    # Forward function
     def forward(self, activation):
         """
-        Implements forward pass (with ReLU activation function for the hidden layers).
+        Implements the forward pass with ReLU activation function for the hidden layers.
 
         Parameters
         ----------
@@ -478,7 +472,6 @@ class DeepNN(torch.nn.Module):
 
         for (l, linear_transform) in zip(range(nb_layers), self.hidden):
 
-            # ReLU activation function for hidden layers
             if l < nb_layers - 1:
                 activation = torch.nn.functional.relu(linear_transform(activation))
                 activation = torch.nn.Dropout(0.5)(activation)
