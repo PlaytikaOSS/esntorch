@@ -24,18 +24,19 @@ from transformers import BertModel
 
 class EmbeddingModel():
     """
-    An EmbeddingModel object contain a BERT model and a method that implements the BERT embedding of batches.
+    An EmbeddingModel object contain a Hugging Face model
+    and a method that embeds batches according to this model.
     """
 
     def __init__(self, model_name='bert-base-uncased', device=torch.device('cpu')):
         """
-        Constructor
+        Constructor.
 
         Parameters
         ----------
         model_name : str
-            Name of the BERT model and tokenizer.
-            The list of or possible models is provided here: https://huggingface.co/models
+            Name of the Hugging Face model and tokenizer.
+            The list of possible models is provided here: https://huggingface.co/models
         device : torch.device
             GPU if available, CPU otherwise.
 
@@ -44,10 +45,10 @@ class EmbeddingModel():
         device : torch.device
             GPU if available, CPU otherwise.
         model_name : str
-            Name of the BERT model.
+            Name of the Hugging Face model.
             The list of or possible models is provided here: https://huggingface.co/models
-        model : e.g., transformers.models.bert.modeling_bert.BertModel
-            Model used for embedding.
+        model : transformers.PreTrainedModel
+            Hugging Face model used for embedding.
         """
 
         self.device = device
@@ -59,24 +60,21 @@ class EmbeddingModel():
     def get_embedding(self, batch):
         """
         Embeds a batch of token ids into a 3D tensor.
-        We assume that the text is already tokenized into a batch of token ids.
-        If the device is a GPU, the embedded batch is computed and put on the GPU.
+        If the device is a GPU, the embedded batch is put on GPU.
 
         Parameters
         ----------
-        batch: torch.Tensor
-            2D tensor: batch of token ids embedded.
-            Each tensor column is a (possibly padded) sequence of token ids that represents one batch sentence.
+        batch: transformers.tokenization_utils_base.BatchEncoding
+            Batch of token ids.
 
         Returns
         -------
         batch_emb : torch.Tensor
-            3D tensor [batch size x max sentence length x embedding dim]
-            BERT embedding of the batch of token ids.
+            3D tensor [max sentence length x batch size x embedding dim]
+            Embedding of the batch of token ids.
         """
 
         with torch.no_grad():
-
             # method 1: dynamic embedding - classical way
             # batch_tkn = batch["input_ids"].to(self.device)
             batch = batch.to(self.device)
