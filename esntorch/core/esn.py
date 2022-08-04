@@ -201,16 +201,13 @@ class EchoStateNetwork(nn.Module):
         # loop over batches
         for i, batch in enumerate(tqdm_notebook(train_dataloader)):
 
-            if callable(self.layer.embedding):  # HuggingFace
+            if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
                 if 'additional_fts' in batch.keys():
                     additional_fts = batch["additional_fts"].to(self.device)
                 else:
                     additional_fts = None
-            # else:  # TorchText
-            #     batch_text = batch.text
-            #     batch_label = batch.label
 
             # Pass the tokens through the layer
             states, lengths = self.layer.forward(batch_text)  # states
@@ -270,16 +267,13 @@ class EchoStateNetwork(nn.Module):
             # loop over batches
             for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=False)):
 
-                if callable(self.layer.embedding):  # HuggingFace
+                if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
                     batch_text = batch
                     batch_label = batch["labels"].to(self.device)
                     if 'additional_fts' in batch.keys():
                         additional_fts = batch["additional_fts"].to(self.device)
                     else:
                         additional_fts = None
-                # else:  # TorchText
-                #     batch_text = batch.text
-                #     batch_label = batch.label
 
                 # Pass the tokens through the layer
                 states, lengths = self.layer.forward(batch_text)  # states
@@ -428,16 +422,13 @@ class EchoStateNetwork(nn.Module):
 
         for i, batch in enumerate(tqdm_notebook(dataloader)):
 
-            if callable(self.layer.embedding):  # HuggingFace
+            if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
                 if 'additional_fts' in batch.keys():
                     additional_fts = batch["additional_fts"].to(self.device)
                 else:
                     additional_fts = None
-            # else:  # TorchText
-            #     batch_text = batch.text
-            #     batch_label = batch.label
 
             # Pass the tokens through the layer
             states, lengths = self.layer.forward(batch_text)
