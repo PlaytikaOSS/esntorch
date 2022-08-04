@@ -201,8 +201,8 @@ class Layer(nn.Module):
 
         Parameters
         ----------
-        warm_up_sequence : datasets.arrow_dataset.Dataset
-            Datasets of sentences to be used for the warming.
+        warm_up_sequence : transformers.tokenization_utils_base.BatchEncoding
+            batch of sentences used for the warm up.
         """
         raise NotImplementedError("Warm up should probably not be used with this kind of layer.")
 
@@ -458,8 +458,8 @@ class LayerRecurrent(LayerLinear):
 
         Parameters
         ----------
-        warm_up_sequence : datasets.arrow_dataset.Dataset
-            Datasets of sentences to be used for the warming.
+        warm_up_sequence : transformers.tokenization_utils_base.BatchEncoding
+            batch of sentences used for the warm up.
         """
 
         # pass texts through the layer
@@ -572,7 +572,7 @@ class DeepLayer(Layer):
         for i in range(self.nb_layers):
             if i > 0:
                 kwargs['input_dim'] = self.layers[i - 1].dim  # dim of R_{i} = input_dim of R_{i+1}
-            # get params of reservoir i and create layer i accordinbgly
+            # get params of reservoir i and create layer i accordingly
             layer = create_layer(**get_parameters(self.nb_layers, i, **kwargs))
             self.layers.append(layer)
 
@@ -627,8 +627,8 @@ class DeepLayer(Layer):
 
         Parameters
         ----------
-        warm_up_sequence : datasets.arrow_dataset.Dataset
-            Datasets of sentences to be used for the warming.
+        warm_up_sequence : transformers.tokenization_utils_base.BatchEncoding
+            batch of sentences used for the warm up.
         """
 
         # Process text into the sequence of reservoirs

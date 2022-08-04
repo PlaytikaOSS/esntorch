@@ -30,60 +30,40 @@ from tqdm.notebook import tqdm_notebook
 
 class EchoStateNetwork(nn.Module):
     """
-    Implements the Echo State Network (ESN) per se.
-    An ESN consists of the combination of a layer, a pooling strategy and a learning algorithm.
+    Implements an **echo state Nnetwork (ESN)** per se.
+    An ESN consists of the combination of
+    a **layer**, a **pooling strategy** and a **learning algorithm**:
+
+    ESN = LAYER + POOLING + LEARNING ALGO.
+
+    Recalling that a general **layer** is itslef composed of
+    an **embedding** and a **reservoir** of neurons, one finally has:
+
+    ESN = EMBEDDING + RESERVOIR + POOLING + LEARNING ALGO.
 
     Parameters
     ----------
-    embedding : torch.Tensor
-        Embedding matrix.
-    distribution : str
-        Distribution of the layer: 'uniform' or 'gaussian'
-    input_dim : int
-        Input dimension.
-    reservoir_dim : int
-        Reservoir dimension.
-    bias_scaling : float
-        Bias scaling: bounds used for the bias random generation.
-    sparsity : float
-        Sparsity of the layer ((between 0 and 1))
-    spectral_radius : float
-        Spectral radius of the layer weights.
-        Should theoretically be below 1, but slightly above 1 works in practice.
-    leaking_rate : float (between 0 and 1)
-        Leaking rate of teh layer (between 0 and 1).
-        Determines the amount of last state and current input involved in the current state updating.
-    activation_function : str
-        Activation function of the layer cells ('tanh' by default).
-    input_scaling : float
-        Input scaling: bounds used for the input weights random generation (if distribution == 'uniform').
-    mean : float
-        Mean of the input and layer weights (if distribution == 'gaussian')
-    std : float
-        Standard deviation of the input and layer weights (if distribution == 'gaussian')
-    learning_algo : src.models.learning_algo.RidgeRegression, src.models.learning_algo.LogisticRegression
-        Learning algorithm used to learn the targets from the layer (merged) states.
-    criterion : torch.nn.modules.loss
-        Criterion used to compute the loss between tagets and predictions (only if leaning_algo ≠ RidgeRegression).
-    optimizer : torch.optim
-        Optimizer used in the gradient descent method (only if leaning_algo ≠ RidgeRegression).
-    pooling_strategy : src.models.pooling_strategy.Pooling
-        Merging strategy used to merge the sucessive layer states.
-    bidirectional : bool
-        Flag for bi-directionality.
-    mode : str
-        The ESN can be used in different modes in order to implement kinds of models
-        (classical ESN, baselines, etc.):
-        If mode=='recurrent_layer', the classical ESN is implemented (EMB + RESERVOIR + LA).
-        If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
-        If mode=='no_layer', the Simple Baseline is implemented (EMB + LA).
-    deep : bool
-        If true implements the Deep Echo State Network (BS) per se (EMB + multiple RESERVOIR + LA).
-    seed : torch._C.Generator
-        Random seed.
+    learning_algo : `object`
+        A learning algo used to train the netwok (see learning_algo.py).
+    criterion : `torch.nn.Module` or `None`
+        Pytorch loss used to train the ESN (in case of non-direct methods).
+    optimizer : `torch.optim.Optimizer` or `None`
+        Pytorch optimizer used to train the ESN (in case of non-direct methods).
+    pooling_strategy : `str`
+        Pooling strategy to be used: 'mean', 'first', 'last',
+        'weighted', 'lexicon_weighted', None,
+    bidirectional : `bool`
+        Whether to implement a bi-directional ESN or not,
+    lexicon : `torch.Tensor` or `None`
+        If not None, lexicon to be used with the pooling strategy 'lexicon_weighted'.
+    deep : `bool`
+        Whether to implement a deep ESN or not.
+    device : `int`
+        The device to be used: cpu or gpu.
+    **kwargs : optional
+        Other keyword arguments.
     """
 
-    # Constructor
     def __init__(self,
                  learning_algo=None,
                  criterion=None,
@@ -113,55 +93,56 @@ class EchoStateNetwork(nn.Module):
 
     def warm_up(self, dataset):
         """
-        Passes a warm up sequence to the ESN and set the warm state as the new initial state.
+        Warms up the ESN (in the case its reservoir is built with a ``LayerRecurrent``).
+        Passes successive sequences through the ESN and updates its initial state.
+        In this case, there is no reservoir, hence nothing is done.
+        This method will be overwritten by the next children classes.
 
         Parameters
         ----------
-        sentence : torch.Tensor XXX
-            1D tensor: word indices of the warm up sentence.
+        dataset : `datasets.arrow_dataset.Dataset`
+            Datasets of sentences to be used for the warming.
         """
 
         for i, text in enumerate(dataset):
-            
-            # text = dataset[i]
-            
+
             for k, v in text.items():
-                
                 text[k] = v.unsqueeze(0)
-                
+
             text = BatchEncoding(text)
             self.layer.warm_up(text)
-            
+
     def _apply_pooling_strategy(self, states, lengths, texts,
                                 reversed_states=None, additional_fts=None):
         """
-        Merges the corresponding layer states depending on the pooling strategy
-        and the whether to apply bi-directionality or not.
+        Pools the reservoir states according to a pooling strategy.
+        If the ESN is bi-directional, the reversed states are also used.
 
         Parameters
         ----------
-        states : torch.Tensor
-            3D tensor: the states of the token that went through the layer
-        lengths : torch.Tensor
-            1D tensor, the token sentences true lengths.
-        texts: torch.Tensor
-            2D tensor containing word indices of the texts in the batch.
-        reversed_states : torch.Tensor
-            3D tensor: Optional, the states of the token that went through the layer
-            in the reverse order when the bi-directional flag is set.
-        additional_fts : None, torch.Tensor
-            2D tensor containing new features (e.g. tf-idf)
-            to be concatenated to each merged state (batch size x dim additional_fts).
+        states : `torch.Tensor`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reservoir states.
+        lengths : `torch.Tensor`
+           1D tensor [batch size] containing the lengths of all sentences in the batch.
+        texts: `transformers.tokenization_utils_base.BatchEncoding`
+            Batch of token ids.
+        reversed_states : `torch.Tensor` or `None`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reversed reservoir states.
+        additional_fts : `torch.Tensor` or `None`
+            In the case of 'mean_and_additional_fts' pooling.
+            2D tensor [batch size x fts dim] containing the additional features
+            to be concatenated to the merged states.
 
         Returns
         -------
         final_states : torch.Tensor
-            2D tensor : the merged tensors.
+            2D tensor [batch size x reservoir dim] containing the merged states.
         """
         if self.bidirectional:
             if self.pooling_strategy.pooling_strategy is None:
-                # concatenate the normal and reversed states along the layer dimension while not
-                # forgetting to first put the reversed words in the correct order, then apply the pooling.
+                # first concatenate the normal and reversed states along the layer dimension, then apply the pooling.
                 restored_states = reversed_states.clone()
                 for i, l in enumerate(lengths):
                     restored_states[i, :l] = torch.flip(restored_states[i, :l], [0])
@@ -169,28 +150,27 @@ class EchoStateNetwork(nn.Module):
                 concatenated_states = torch.cat([states, restored_states], dim=2)
                 final_states = self.pooling_strategy(concatenated_states, lengths, texts)
             else:
-                # concatenate the normal and reversed states after their pooling
+                # first pool the states and reverse states, then concatenate the merged states
                 normal_merged_states = self.pooling_strategy(states, lengths, texts, additional_fts)
                 reversed_merged_states = self.pooling_strategy(reversed_states, lengths, texts)
-                # concatenate the batches across features dimension
+                # concatenate batches across features dimension
                 final_states = torch.cat([normal_merged_states, reversed_merged_states], dim=1)
         else:
             final_states = self.pooling_strategy(states, lengths, texts, additional_fts)
-        
+
         return final_states
 
     def _fit_direct(self, train_dataloader):
         """
-        Fits the ESN using the Ridge regression closed-form solution.
+        Fits ESN with direct method (i.e., no gradient descent).
+        This fit is to be used with the following learning algorithms:
+        ``RidgeRegression``, ``RidgeRegression_skl``, ``LinearSVC``, and
+        ``LogisticRegression_skl``.
 
         Parameters
         ----------
-        train_dataloader: torchtext.data.iterator.Iterator
-            Training dataset.
-
-        Returns
-        -------
-        None
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
         """
 
         print("Computing closed-form solution...")
@@ -201,29 +181,28 @@ class EchoStateNetwork(nn.Module):
         # loop over batches
         for i, batch in enumerate(tqdm_notebook(train_dataloader)):
 
-            if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
-                batch_text = batch
-                batch_label = batch["labels"].to(self.device)
-                if 'additional_fts' in batch.keys():
-                    additional_fts = batch["additional_fts"].to(self.device)
-                else:
-                    additional_fts = None
+            batch_text = batch
+            batch_label = batch["labels"].to(self.device)
+            if 'additional_fts' in batch.keys():
+                additional_fts = batch["additional_fts"].to(self.device)
+            else:
+                additional_fts = None
 
-            # Pass the tokens through the layer
+            # forward pass
             states, lengths = self.layer.forward(batch_text)  # states
 
-            # Do the same as above but with the sentences reversed
+            # forward pass with reversed states
             reversed_states = None
             if self.bidirectional:
                 reversed_states, _ = self.layer.reverse_forward(batch_text)
 
             labels = batch_label
 
-            # if pooling_strategy is None: duplicate labels
+            # if pooling_strategy is None, then duplicate labels
             if self.pooling_strategy.pooling_strategy is None:
                 labels = mat.duplicate_labels(labels, lengths)
 
-            # apply the correct pooling strategy and bi-directionality if needed.
+            # apply pooling
             final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                         reversed_states, additional_fts)
             states_l.append(final_states)
@@ -235,25 +214,26 @@ class EchoStateNetwork(nn.Module):
 
         print("\nTraining complete.")
 
-        return None
 
     def _fit_GD(self, train_dataloader, epochs=1, iter_steps=100):
         """
-        Fits the ESN using gradient descent.
+        Fits ESN with gradient descent method.
+        This fit is to be used with the following learning algorithms:
+        ``LogisticRegression`` and ``DeepNN``.
 
         Parameters
         ----------
-        train_dataloader: torchtext.data.iterator.Iterator
-            Training dataset.
-        epochs: int
-            Number of epochs.
-        iter_steps: int
-            Number of iteration steps before displaying the loss.
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
+        epochs : `int`
+            Number of training epochs.
+        iter_steps : `int`
+            Number of steps (batches) after which the loss is printed.
 
         Returns
         -------
-        loss_l: list
-            List of losses.
+        loss_l: `list`
+            List of training losses.
         """
 
         print("Performing gradient descent...")
@@ -267,28 +247,27 @@ class EchoStateNetwork(nn.Module):
             # loop over batches
             for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=False)):
 
-                if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
-                    batch_text = batch
-                    batch_label = batch["labels"].to(self.device)
-                    if 'additional_fts' in batch.keys():
-                        additional_fts = batch["additional_fts"].to(self.device)
-                    else:
-                        additional_fts = None
+                batch_text = batch
+                batch_label = batch["labels"].to(self.device)
+                if 'additional_fts' in batch.keys():
+                    additional_fts = batch["additional_fts"].to(self.device)
+                else:
+                    additional_fts = None
 
-                # Pass the tokens through the layer
+                # forward pass
                 states, lengths = self.layer.forward(batch_text)  # states
 
-                # Do the same as above but with the sentences reversed
+                # forward pass with reversed states
                 reversed_states = None
                 if self.bidirectional:
                     reversed_states, _ = self.layer.reverse_forward(batch_text)
 
-                labels = batch_label.type(torch.int64)  # labels (converted to int for the loss)
-                # if pooling_strategy is None: duplicate labels
+                labels = batch_label.type(torch.int64)  # labels converted to int in this case
+                # if pooling_strategy is None, then duplicate labels
                 if self.pooling_strategy.pooling_strategy is None:
                     labels = mat.duplicate_labels(labels, lengths)
 
-                # apply the correct pooling strategy and bi-directionality if needed.
+                # apply pooling
                 final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                             reversed_states, additional_fts)
 
@@ -301,7 +280,7 @@ class EchoStateNetwork(nn.Module):
                 loss = self.criterion(outputs, labels)  # compute loss
                 self.optimizer.zero_grad()  # reset optimizer gradient
                 loss.backward()  # backward pass
-                self.optimizer.step()  # gradient update
+                self.optimizer.step()  # update weights
 
                 n_iter += 1
 
@@ -315,27 +294,23 @@ class EchoStateNetwork(nn.Module):
 
     def fit(self, train_dataloader, epochs=1, iter_steps=100):
         """
-        Fits the ESN on the training set. Fitting is performed according to:
-        1) a learning algorithm;
-        2) a pooling strategy.
+        Fits ESN.
+        Calls the correct ``_fit_direct()`` or ``_fit_GD()`` method
+        depending on the learning algorithm.
+        The parameters ``epochs`` and ``iter_steps`` are ignored
+        in the case of a ``_fit_direct``.
 
         Parameters
         ----------
-        train_dataloader : torchtext.data.iterator.Iterator
-            Training dataset.
-        epochs : int
-            Number of traning epochs (only if leaning_algo ≠ RidgeRegression)
-        iter_steps : int
-            Number of traning steps after which loss is recorded (only if leaning_algo ≠ RidgeRegression).
-
-        Returns
-        -------
-        loss_l : None, list
-            None if closed-form solution used.
-            list of losses if gradient descent used.
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
+        epochs : `int`
+            Number of training epochs.
+        iter_steps : `int`
+            Number of steps (batches) after which the loss is printed.
         """
 
-        # Closed-form training (for RR, RF)
+        # closed-form training
         if isinstance(self.learning_algo, la.RidgeRegression) or \
                 isinstance(self.learning_algo, la.RidgeRegression_skl) or \
                 isinstance(self.learning_algo, la.LogisticRegression_skl) or \
@@ -343,54 +318,57 @@ class EchoStateNetwork(nn.Module):
 
             return self._fit_direct(train_dataloader)
 
-        # Gradient descent training (for LR or deep NN)
-        else:
+        # Gradient descent training
+        elif isinstance(self.learning_algo, la.LogisticRegression) or \
+                isinstance(self.learning_algo, la.DeepNN):
 
             return self._fit_GD(train_dataloader, epochs, iter_steps)
 
     def _compute_predictions(self, states, lengths):
         """
-        Takes layer states, passes them to the learning algorithm and computes predictions out of them.
+        Takes states, passes them to the learning algorithm and computes predictions out of them.
         Predictions are computed differently depending on whether the pooling strategy is None or not.
         If pooling strategy is None, the predictions are computed as follows:
+
         For each input sentence u:
-        (1) the corresponding layer states X_u are passed through the learning algorithm;
-        (2) the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
-        (3) the prediction is arg_max(y_u).
+            - the states X_u are passed through the learning algorithm;
+            - the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
+            - prediction = arg_max(y_u).
+
         If pooling strategy is not None, the predictions are computed as follows:
+
         For each input sentence u:
-        (1) the corresponding merged layer state x_u is passed through the learning algorithm,
+            - the merged layer state x_u is passed through the learning algorithm;
         yielding a 1-dim tensor y_u;
-        (3) the prediction is the arg_max(y_u).
+            - prediction = arg_max(y_u).
 
         Parameters
         ----------
-        states: torch.Tensor
-            Reservoir states obtained after processing the inputs.
-        lengths: torch.Tensor
-            Lengths of input texts in the batch.
+        states : `torch.Tensor`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reservoir states.
+        lengths : `torch.Tensor`
+           1D tensor [batch size] containing the lengths of all sentences in the batch.
 
         Returns
         -------
-        predictions: torch.Tensor
+        predictions : `torch.Tensor`
             Predictions computed from the outputs.
         """
 
         raw_outputs = self.learning_algo(states)
 
-        if self.pooling_strategy.pooling_strategy is None:  # pooling strategy is None
-
-            # tmp = list(lengths.numpy())
-            # tmp = [sum(tmp[:i]) - 1 for i in range(1, len(tmp) + 1)]
-            # predictions = outputs[tmp].type(torch.int64)
+        # pooling strategy is None
+        if self.pooling_strategy.pooling_strategy is None:
 
             tmp = list(lengths.cpu().numpy())
             tmp = [0] + [sum(tmp[:i]) for i in range(1, len(tmp) + 1)]
             outputs = torch.stack([torch.mean(raw_outputs[tmp[i]:tmp[i + 1]], dim=0) for i in range(len(tmp) - 1)])
             predictions = outputs.argmax(dim=1)
 
-        else:  # pooling strategy is not None
-            if raw_outputs.dim() != 1:  # the learning algo returns the probas
+        # pooling strategy is not None
+        else:
+            if raw_outputs.dim() != 1:  # the learning algo returns the probs
                 outputs = raw_outputs.argmax(dim=1).float()
             else:  # the learning algo returns the classes
                 outputs = raw_outputs.float()
@@ -400,19 +378,20 @@ class EchoStateNetwork(nn.Module):
 
     def predict(self, dataloader, verbose=True):
         """
-        Evaluates the ESN on a dataset (train or test).
-        Returns the list of prediction labels. If true labels are known, returns the accuracy also.
+        Evaluates the ESN on a dataloader (train, test, validation).
+        Returns the list of prediction labels.
+        If the true labels are known, then returns the accuracy also.
 
         Parameters
         ----------
-        dataloader : torchtext.data.iterator.Iterator
-            Test dataset.
+        dataloader : `torch.utils.data.dataloader.DataLoader`
+            Dataloader.
+        verbose : `bool`
 
         Returns
         -------
-        predictions_l, accuracy : list, float
-            List of prediction labels and accuracy.
-            If true labels are not known, returns None for accuracy.
+        `tuple` [`list`, `float`]
+            (predictions, accuracy): list of predictions and accuracy.
         """
 
         predictions_l = []
@@ -430,28 +409,28 @@ class EchoStateNetwork(nn.Module):
                 else:
                     additional_fts = None
 
-            # Pass the tokens through the layer
+            # forward pass
             states, lengths = self.layer.forward(batch_text)
 
-            # Do the same as above but with the sentences reversed
+            # forward pass with reversed text
             reversed_states = None
             if self.bidirectional:
                 reversed_states, _ = self.layer.reverse_forward(batch_text)
 
-            # apply the correct pooling strategy and bi-directionality if needed.
+            # apply pooling
             final_states = self._apply_pooling_strategy(states, lengths, batch_text,
                                                         reversed_states, additional_fts)
 
             predictions = self._compute_predictions(final_states, lengths)
             predictions_l.append(predictions.reshape(-1))
 
-            # if labels available, compute accuracy
+            # if labels available, then compute accuracy
             try:
                 labels = batch_label.type(torch.int64)
                 total += labels.size(0)
                 correct += (predictions == labels).sum()
                 testing_mode = True
-            # otherwise: pure prediction mode
+            # otherwise, pure prediction mode
             except Exception:
                 pass
 

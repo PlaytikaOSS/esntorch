@@ -101,7 +101,7 @@ class Pooling:
         texts: `transformers.tokenization_utils_base.BatchEncoding`
             Batch of token ids.
         pooling_strategy : `None` or `str`
-            Possible values are: None, 'first', 'last', 'mean', 'weighted'.
+            Possible values are: None, 'first', 'last', 'mean', 'weighted', 'lexicon_weighted'.
         weights : `None` or `torch.Tensor`
             2D tensor containing the weights for each state [batch size x max text length].
         additional_fts : `None` or `torch.Tensor`
