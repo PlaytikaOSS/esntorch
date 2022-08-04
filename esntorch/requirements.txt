@@ -1,5 +1,0 @@
-torch==1.7.1
-numpy==1.21.2
-transformers==4.8.2
-EsnTorch==0.0.2
-scikit_learn==1.1.1
