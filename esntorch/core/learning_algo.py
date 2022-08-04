@@ -32,19 +32,13 @@ class RidgeRegression(torch.nn.Module):
 
     Parameters
     ----------
-    alpha : float
-       Regularization parameter.
+    alpha : `float`
+    mode : `None` or `str`
+        Default mode is None.
+        The modes 'normalize' and 'standardize' are also possible.
     """
 
     def __init__(self, alpha=1., mode=None):
-        """
-        Parameters
-        ----------
-        alpha : float
-        mode : Union[None, str]
-            Default mode is None.
-            The modes 'normalize' and 'standardize' are also possible.
-        """
 
         super(RidgeRegression, self).__init__()
 
@@ -62,9 +56,9 @@ class RidgeRegression(torch.nn.Module):
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
-        y : torch.Tensor
+        y : `torch.Tensor`
             Tensor of targets (gathered by rows).
         """
 
@@ -102,12 +96,12 @@ class RidgeRegression(torch.nn.Module):
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
 
         Returns
         -------
-        outputs : torch.Tensor
+        outputs : `torch.Tensor`
             Outputs of Ridge regression
         """
 
@@ -129,14 +123,10 @@ class RidgeRegression(torch.nn.Module):
 class RidgeRegression_skl:
     """
     Implements the Ridge Regression from scikit learn.
-
-    Parameters
-    ----------
-        Same parameters as those of sklearn.linear_model.Ridge
-        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html
+    Takes the parameters as those of sklearn.linear_model.Ridge
+    https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html
     """
 
-    # Constructor
     def __init__(self,
                  alpha=1.0,
                  fit_intercept=True,
@@ -165,9 +155,9 @@ class RidgeRegression_skl:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
-        y : torch.Tensor
+        y : `torch.Tensor`
             Tensor of targets (gathered by rows).
         """
 
@@ -186,12 +176,12 @@ class RidgeRegression_skl:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
 
         Returns
         -------
-        outputs : torch.Tensor
+        outputs : `torch.Tensor`
             Outputs of the Ridge regression.
         """
 
@@ -208,11 +198,8 @@ class RidgeRegression_skl:
 class LinearSVC:
     """
     Implements Linear Support Vector Machine Classifier LinearSVC from scikit learn.
-
-    Parameters
-    ----------
-        Same parameters as those of sklearn.svm.LinearSVC:
-        https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
+    Takes the same parameters as those of sklearn.svm.LinearSVC:
+    https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html
     """
 
     def __init__(self,
@@ -249,9 +236,9 @@ class LinearSVC:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
-        y : torch.Tensor
+        y : `torch.Tensor`
             Tensor of targets (gathered by rows).
         """
 
@@ -270,12 +257,12 @@ class LinearSVC:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
 
         Returns
         -------
-        outputs : torch.Tensor
+        outputs : `torch.Tensor`
             Outputs of the linear SVC regression.
         """
 
@@ -295,20 +282,13 @@ class LogisticRegression(torch.nn.Module):
 
     Parameters
     ----------
-    input_dim : int
+    input_dim : `int`
        Input dimension.
-    output_dim : int
+    output_dim : `int`
        Output dimension.
     """
 
     def __init__(self, input_dim, output_dim):
-        """
-        Parameters
-        ----------
-        input_dim : int
-        output_dim : int
-        """
-
         super(LogisticRegression, self).__init__()
 
         self.linear = torch.nn.Linear(input_dim, output_dim)
@@ -319,12 +299,12 @@ class LogisticRegression(torch.nn.Module):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x : `torch.Tensor`
             Tensor of features (gathered by rows).
 
         Returns
         -------
-        outputs : torch.Tensor
+        outputs : `torch.Tensor`
             Tensor of outputs (gathered by row).
         """
 
@@ -336,11 +316,8 @@ class LogisticRegression(torch.nn.Module):
 class LogisticRegression_skl:
     """
     Implements the Logistic Regression LogisticRegression from scikit learn.
-
-    Parameters
-    ----------
-        Same parameters as those of sklearn.linear_model.LogisticRegression
-        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+    Takes the same parameters as those of sklearn.linear_model.LogisticRegression
+    https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
     """
 
     def __init__(self,
@@ -383,9 +360,9 @@ class LogisticRegression_skl:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
-        y : torch.Tensor
+        y : `torch.Tensor`
             Tensor of targets (gathered by rows).
         """
 
@@ -404,12 +381,12 @@ class LogisticRegression_skl:
 
         Parameters
         ----------
-        X : torch.Tensor
+        X : `torch.Tensor`
             Tensor of features (gathered by rows).
 
         Returns
         -------
-        outputs : torch.Tensor
+        outputs : `torch.Tensor`
             Outputs of Ridge regression
         """
 
@@ -435,16 +412,11 @@ class DeepNN(torch.nn.Module):
 
     Parameters
     ----------
-    layers_l : List[int]
+    layers_l : `list` [`int`]
        List of integers representing the number on neurons in each layer.
     """
 
     def __init__(self, layers_l):
-        """
-        Parameters
-        ----------
-        layers_l : List[int]
-        """
 
         super(DeepNN, self).__init__()
 
@@ -459,12 +431,12 @@ class DeepNN(torch.nn.Module):
 
         Parameters
         ----------
-        activation : torch.Tensor
+        activation : `torch.Tensor`
             Activation values of the input layer neurons: (batch size x input dim).
 
         Returns
         -------
-        activation : torch.Tensor
+        activation : `torch.Tensor`
             Activation values of the output layer neurons: (batch size x output dim).
         """
 

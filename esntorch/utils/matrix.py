@@ -28,24 +28,24 @@ def generate_uniform_matrix(size, sparsity=None, scaling=1.0, spectral_radius=No
 
     Parameters
     ----------
-    size : tuple
+    size : `tuple`
         Size of the generated tensor.
-    sparsity : float
+    sparsity : `float`
         Sparsity of the generated tensor (None by default).
         Corresponds to the percentage of tensor values set to zero.
-    scaling : float
+    scaling : `float`
         Scaling of the generated tensor (1.0 by default).
         Corresponds to the bounds between which the tensor values are generated.
-    spectral_radius : float
+    spectral_radius : `float`
         Spectral radius of the generated tensor (None by default).
         The spectral radius is the absolute value of the largest eigenvalue.
         The generated tensor is rescaled to have the given spectral radius.
-    dtype : torch.float32
+    dtype : `torch.float32`
         Type of the generated tensor (can be changed).
 
     Returns
     -------
-    tensor_out : torch.Tensor
+    tensor_out : `torch.Tensor`
         Torch tensor generated from a uniform distribution.
         The tensor has the required sparsity, scaling and spectral radius.
     """
@@ -69,29 +69,29 @@ def generate_gaussian_matrix(size, sparsity=None, mean=0.0, std=1.0, spectral_ra
 
     Parameters
     ----------
-    size : tuple
+    size : `tuple`
         Size of the generated tensor.
-    sparsity : float
+    sparsity : `float`
         Sparsity of the generated tensor (None by default).
         Corresponds to the percentage of tensor values set to zero.
-    mean : float
+    mean : `float`
         Mean of the Gaussian distribution (0.0 by default).
         Note that, after the sparsity mask has been applied and the tensor been rescaled
         according to some spectral radius, the mean of the elements will be changed.
-    std : float
+    std : `float`
         Standard deviation of the Gaussian distribution (1.0 by default).
         Note that, after the sparsity mask has been applied and the tensor been rescaled
         according to some spectral radius, the std of the elements will be changed.
-    spectral_radius : float
+    spectral_radius : `float`
         Spectral radius of the generated tensor (None by default).
         The spectral radius is the absolute value of the largest eigenvalue.
         The generated tensor is rescaled to have the given spectral radius.
-    dtype : torch.float32
+    dtype : `torch.float32`
         Type of the generated tensor (can be changed).
 
     Returns
     -------
-    tensor_out : torch.Tensor
+    tensor_out : `torch.Tensor`
         Torch tensor generated from a Gaussian distribution.
         The tensor has the required sparsity, modified mean, modified std and spectral radius.
     """
@@ -118,14 +118,14 @@ def adjust_spectral_radius(tensor_2d, spectral_radius):
 
     Parameters
     ----------
-    tensor_2d : torch.Tensor
+    tensor_2d : `torch.Tensor`
         2D tensor to be rescaled.
-    spectral_radius : float
+    spectral_radius : `float`
         Spectral radius obtained after rescaling.
 
     Returns
     -------
-    tensor_2D : torch.Tensor
+    tensor_2D : `torch.Tensor`
         Rescaled torch tensor with given spectral radius.
     """
 
@@ -147,19 +147,17 @@ def duplicate_labels(labels, lengths):
 
     Parameters
     ----------
-    labels: torch.Tensor
+    labels : `torch.Tensor`
         1D tensor of labels
 
         .
-    lengths: torch.Tensor
+    lengths : `torch.Tensor`
         1D tensor of lengths.
 
     Returns
     -------
-    labels_duplicated: torch.Tensor
-        1D tensor of d
-
-        uplicated labels.
+    labels_duplicated : `torch.Tensor`
+        1D tensor of duplicated labels.
     """
 
     # For each i, duplicate labels[i] lengths[i] times, and concatenate all those.

@@ -26,31 +26,27 @@ class EmbeddingModel():
     """
     An EmbeddingModel object contain a Hugging Face model
     and a method that embeds batches according to this model.
+
+    Parameters
+    ----------
+    model_name : `str`
+        Name of the Hugging Face model and tokenizer.
+        The list of possible models is provided here: https://huggingface.co/models
+    device : `torch.device`
+        GPU if available, CPU otherwise.
+
+    Attributes
+    ----------
+    device : `torch.device`
+        GPU if available, CPU otherwise.
+    model_name : `str`
+        Name of the Hugging Face model.
+        The list of or possible models is provided here: https://huggingface.co/models
+    model : `transformers.PreTrainedModel`
+        Hugging Face model used for embedding_fn.
     """
 
     def __init__(self, model_name='bert-base-uncased', device=torch.device('cpu')):
-        """
-        Constructor.
-
-        Parameters
-        ----------
-        model_name : str
-            Name of the Hugging Face model and tokenizer.
-            The list of possible models is provided here: https://huggingface.co/models
-        device : torch.device
-            GPU if available, CPU otherwise.
-
-        Attributes
-        ----------
-        device : torch.device
-            GPU if available, CPU otherwise.
-        model_name : str
-            Name of the Hugging Face model.
-            The list of or possible models is provided here: https://huggingface.co/models
-        model : transformers.PreTrainedModel
-            Hugging Face model used for embedding.
-        """
-
         self.device = device
         self.model_name = model_name
         self.model = BertModel.from_pretrained(self.model_name, output_hidden_states=True)
@@ -64,29 +60,29 @@ class EmbeddingModel():
 
         Parameters
         ----------
-        batch: transformers.tokenization_utils_base.BatchEncoding
+        batch : `transformers.tokenization_utils_base.BatchEncoding`
             Batch of token ids.
 
         Returns
         -------
-        batch_emb : torch.Tensor
-            3D tensor [max sentence length x batch size x embedding dim]
+        batch_emb : `torch.Tensor`
+            3D tensor [max sentence length x batch size x embedding_fn dim]
             Embedding of the batch of token ids.
         """
 
         with torch.no_grad():
-            # method 1: dynamic embedding - classical way
+            # method 1: dynamic embedding_fn - classical way
             # batch_tkn = batch["input_ids"].to(self.device)
             batch = batch.to(self.device)
             batch_emb = self.model(batch["input_ids"], batch["attention_mask"])[0].transpose(0, 1)
 
-            # method 2: dynamic embedding - concatenates the last two layers
+            # method 2: dynamic embedding_fn - concatenates the last two layers
             # output = self.model(batch_tkn)
             # batch_emb_1 = output[2][-1]
             # batch_emb_2 = output[2][-2]
             # batch_emb = torch.cat([batch_emb_1, batch_emb_2], dim=2).transpose(0, 1)
 
-            # method 3: static embedding (less powerful)
+            # method 3: static embedding_fn (less powerful)
             # batch_emb = self.model.embeddings.word_embeddings(batch_tkn).transpose(0, 1)
 
         return batch_emb
