@@ -27,17 +27,26 @@ from torch.autograd import Variable
 
 class Layer(nn.Module):
     """
-    Implements a Layer of a network. A layer is composed of an embedding and a forward method.
-    This is a base class for more complex layer, like LayerLinear or LayerRecurrent.
+    Implements a Layer of a network. A layer is composed of
+    - an embedding and associated _embed method;
+    - a `forward` method;
+    - a reverse_forward
+    . a warm_up method
+    This is a base class for more complex layers:
+    LayerLinear, LayerRecurrent, DeepLayer.
 
     Parameters
     ----------
-    embedding : torch.Tensor
-        Embedding matrix.
+    embedding : str
+        Name of Hugging Face model used for embedding.
+    input_dim : int
+        Dimension of the inputs. If a Hugging Face model is given as an embedding,
+        then input_dim is automatically set to the dimension of the model.
+        Otherwise, input_dim needs to be specified (cf. case of DeepLayer).
     seed : torch._C.Generator
         Random seed.
     device: torch.device
-        Device gpu or cpu.
+        The device to be used: cpu or gpu.
     """
 
     def __init__(self,
@@ -52,15 +61,15 @@ class Layer(nn.Module):
         torch.manual_seed(seed)
         self.device = device
         
-        # Set embeddings
-        # TorchText (embedding weights)
-        if (embedding is not None) and torch.is_tensor(embedding):
-            vocab_size, embed_dim = embedding.size()
-            self.embedding = nn.Embedding(vocab_size, embed_dim).requires_grad_(False)
-            self.embedding.weight.data.copy_(embedding)
-
-            # Assign a random embedding to the <unk> token
-            self.embedding.weight.data[0] = torch.rand(embed_dim)
+        # # Set embeddings
+        # # TorchText (embedding weights)
+        # if (embedding is not None) and torch.is_tensor(embedding):
+        #     vocab_size, embed_dim = embedding.size()
+        #     self.embedding = nn.Embedding(vocab_size, embed_dim).requires_grad_(False)
+        #     self.embedding.weight.data.copy_(embedding)
+        #
+        #     # Assign a random embedding to the <unk> token
+        #     self.embedding.weight.data[0] = torch.rand(embed_dim)
 
         # HuggingFace (embedding function)
         elif isinstance(embedding, str):

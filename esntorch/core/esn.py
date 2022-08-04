@@ -208,9 +208,9 @@ class EchoStateNetwork(nn.Module):
                     additional_fts = batch["additional_fts"].to(self.device)
                 else:
                     additional_fts = None
-            else:  # TorchText
-                batch_text = batch.text
-                batch_label = batch.label
+            # else:  # TorchText
+            #     batch_text = batch.text
+            #     batch_label = batch.label
 
             # Pass the tokens through the layer
             states, lengths = self.layer.forward(batch_text)  # states
@@ -277,9 +277,9 @@ class EchoStateNetwork(nn.Module):
                         additional_fts = batch["additional_fts"].to(self.device)
                     else:
                         additional_fts = None
-                else:  # TorchText
-                    batch_text = batch.text
-                    batch_label = batch.label
+                # else:  # TorchText
+                #     batch_text = batch.text
+                #     batch_label = batch.label
 
                 # Pass the tokens through the layer
                 states, lengths = self.layer.forward(batch_text)  # states
@@ -435,9 +435,9 @@ class EchoStateNetwork(nn.Module):
                     additional_fts = batch["additional_fts"].to(self.device)
                 else:
                     additional_fts = None
-            else:  # TorchText
-                batch_text = batch.text
-                batch_label = batch.label
+            # else:  # TorchText
+            #     batch_text = batch.text
+            #     batch_label = batch.label
 
             # Pass the tokens through the layer
             states, lengths = self.layer.forward(batch_text)
