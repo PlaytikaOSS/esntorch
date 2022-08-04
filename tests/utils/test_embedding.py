@@ -31,9 +31,10 @@
 # pytest --cov tests/utils/
 # *** END INSTRUCTIONS ***
 
-from esntorch.utils.embedding import *
+from esntorch.utils.embedding import EmbeddingModel
+import torch
 import transformers
-import pytest
+# import pytest
 
 
 def test_init():

@@ -116,8 +116,8 @@ def instantiate_esn(**kwargs):
         'mean': 0.0,
         'std': 1.0,
         'learning_algo': None,  # initialzed below
-        'criterion': None,      # initialzed below
-        'optimizer': None,      # initialzed below
+        'criterion': None,  # initialzed below
+        'optimizer': None,  # initialzed below
         'pooling_strategy': 'mean',
         'bidirectional': False,
         'device': device,
@@ -138,11 +138,15 @@ def instantiate_esn(**kwargs):
 
 
 def warm_up(ESN, dataset_d):
+    """Warm up ESN."""
+
     if isinstance(ESN.layer, res.LayerRecurrent):
         ESN.warm_up(dataset_d['train'].select(range(10)))
 
 
 def is_uniform(layer):
+    """Test uniform distribution."""
+
     weights = layer.layer_w.view(-1)
     # assert layer dim
     assert layer.layer_w.shape == (layer.dim, layer.dim)
@@ -152,13 +156,16 @@ def is_uniform(layer):
 
 
 def is_gaussian(layer):
+    """Test Gaussian distribution."""
+
     weights = layer.layer_w.view(-1)
     assert torch.mean(weights).cpu() == pytest.approx(layer.mean, abs=0.05)
     assert torch.std(weights).cpu() == pytest.approx(layer.std, 0.05)
 
 
 def test_UniformReservoir():
-    # test uniform distribution
+    """Test uniform reservoir."""
+
     mode, distribution = 'recurrent_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
     layer = ESN.layer
@@ -166,15 +173,17 @@ def test_UniformReservoir():
 
 
 def test_GaussianReservoir():
-    # test gaussian distribution
+    """Test Gaussian reservoir."""
+
     mode, distribution = 'recurrent_layer', 'gaussian'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
     layer = ESN.layer
     is_gaussian(layer)
 
 
-def test_linear_layer():
-    # test linear layer
+def test_LayerLinear():
+    """Test LayerLinear."""
+
     mode, distribution = 'linear_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
     reservoir = ESN.layer
@@ -185,8 +194,9 @@ def test_linear_layer():
     assert input_w.shape[0] == reservoir.dim
 
 
-def test_no_layer():
-    # test no layer
+def test_Layer():
+    """Test Layer (i.e., no layer case)."""
+
     mode, distribution = 'no_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
     reservoir = ESN.layer
@@ -194,8 +204,9 @@ def test_no_layer():
     assert weights is None
 
 
-def test_deep_layer():
-    # test deep layer
+def test_DeepLayer():
+    """Test DeepLayer."""
+
     mode, distributions = ['recurrent_layer', 'recurrent_layer'], ['uniform', 'gaussian']
     ESN = instantiate_esn(nb_layers=2, mode=mode, distribution=distributions, deep=True)
     layers = ESN.layer.layers
@@ -204,6 +215,8 @@ def test_deep_layer():
 
 
 def test_warm_up(create_dataset):
+    """Test warm_up method."""
+
     mode, distribution = 'recurrent_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
     initial_state = ESN.layer.initial_state

@@ -214,7 +214,6 @@ class EchoStateNetwork(nn.Module):
 
         print("\nTraining complete.")
 
-
     def _fit_GD(self, train_dataloader, epochs=1, iter_steps=100):
         """
         Fits ESN with gradient descent method.

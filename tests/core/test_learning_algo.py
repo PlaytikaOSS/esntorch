@@ -95,8 +95,8 @@ def create_dataset():
     # Create dataloaders
     dataloader_d = {}
     for k, v in dataset_d.items():
-        dataloader_d[k] = torch.utils.data.DataLoader(v, 
-                                                      batch_size=256, 
+        dataloader_d[k] = torch.utils.data.DataLoader(v,
+                                                      batch_size=256,
                                                       collate_fn=DataCollatorWithPadding(tokenizer))
 
     return dataset_d, dataloader_d
@@ -111,23 +111,23 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
     # ESN parameters
     esn_params = {
         'embedding': 'bert-base-uncased',
-        'distribution': 'uniform',     # uniform, gaussian
+        'distribution': 'uniform',  # uniform, gaussian
         'dim': 1000,
         'bias_scaling': 0.,
         'sparsity': 0.,
         'spectral_radius': 0.7094538192983408,
         'leaking_rate': 0.17647315261153904,
-        'activation_function': 'relu', # 'tanh', 'relu'
+        'activation_function': 'relu',  # 'tanh', 'relu'
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
-        'learning_algo': None,         # initialzed below
-        'criterion': None,             # initialzed below
-        'optimizer': None,             # initialzed below
-        'pooling_strategy': 'mean',    # 'mean', 'last', None
+        'learning_algo': None,  # initialzed below
+        'criterion': None,  # initialzed below
+        'optimizer': None,  # initialzed below
+        'pooling_strategy': 'mean',  # 'mean', 'last', None
         'bidirectional': bidirectional,
         'device': device,
-        'mode': 'recurrent_layer',     # 'no_layer, 'linear_layer', 'recurrent_layer'
+        'mode': 'recurrent_layer',  # 'no_layer, 'linear_layer', 'recurrent_layer'
         'seed': 42
     }
 
@@ -136,7 +136,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
 
     # Define the learning algo of the ESN
     if bidirectional:
-        input_dim = esn_params['dim']*2
+        input_dim = esn_params['dim'] * 2
     else:
         input_dim = esn_params['dim']
 
@@ -170,7 +170,7 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
     # Results
     # Train predictions and accuracy
     train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    # train_acc = train_acc.item() if device.type == 'cuda' else train_acc # XXX
+    #  train_acc = train_acc.item() if device.type == 'cuda' else train_acc # XXX
 
     # Test predictions and accuracy
     test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
@@ -180,6 +180,8 @@ def train_esn(dataset_d, dataloader_d, learning_algo=None, bidirectional=False):
 
 
 def test_RidgeRegression_fit(create_dataset):
+    """Test RidgeRegression."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
@@ -188,6 +190,8 @@ def test_RidgeRegression_fit(create_dataset):
 
 
 def test_RidgeRegression_skl_fit(create_dataset):
+    """Test RidgeRegression_skl."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
@@ -196,6 +200,8 @@ def test_RidgeRegression_skl_fit(create_dataset):
 
 
 def test_LogisticRegression_fit(create_dataset):
+    """Test LogisticRegression."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
@@ -204,6 +210,8 @@ def test_LogisticRegression_fit(create_dataset):
 
 
 def test_LogisticRegression_skl_fit(create_dataset):
+    """Test LogisticRegression_skl."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
@@ -211,7 +219,9 @@ def test_LogisticRegression_skl_fit(create_dataset):
         assert train_acc > 0.8 and test_acc > 0.8
 
 
-def test_SVC_fit(create_dataset):
+def test_LinearSVC_fit(create_dataset):
+    """Test LinearSVC."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,
@@ -220,6 +230,8 @@ def test_SVC_fit(create_dataset):
 
 
 def test_DeepNN_fit(create_dataset):
+    """Test DeepNN."""
+
     dataset_d, dataloader_d = create_dataset
     for b in [False, True]:
         train_acc, test_acc = train_esn(dataset_d=dataset_d, dataloader_d=dataloader_d,

@@ -40,10 +40,9 @@ import esntorch.core.reservoir as res
 import esntorch.core.esn as esn
 import pytest
 
+
 # We train an ESN with the different learning algorithms on 20% of the TREC dataset.
 # We test whether the train and test perfromance is higher than 70%.
-import esntorch.core.pooling_strategy
-
 
 @pytest.fixture()
 def create_dataset():
@@ -77,14 +76,13 @@ def create_dataset():
         dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels', 'lengths'])
 
         return dataset
-    
+
     # Device
     global device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
     # Load BERT tokenizer
-    # global tokenizer
-    tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+    tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')  # global
 
     # Load and prepare data
     CACHE_DIR = 'cache_dir/'
@@ -114,15 +112,15 @@ def instantiate_esn(**kwargs):
         'dim': 1000,
         'bias_scaling': 0.1,
         'sparsity': 0.,
-        'spectral_radius': None, 
+        'spectral_radius': None,
         'leaking_rate': 0.17647315261153904,
         'activation_function': 'tanh',
         'input_scaling': 0.1,
         'mean': 0.0,
         'std': 1.0,
         'learning_algo': None,  # initialzed below
-        'criterion': None,      # initialzed below
-        'optimizer': None,      # initialzed below
+        'criterion': None,  # initialzed below
+        'optimizer': None,  # initialzed below
         'pooling_strategy': 'mean',
         'bidirectional': False,
         'device': device,
@@ -143,25 +141,31 @@ def instantiate_esn(**kwargs):
 
 
 def warm_up(ESN, dataset_d):
+    """Warm up ESN."""
+
     if isinstance(ESN.layer, res.LayerRecurrent):
         ESN.warm_up(dataset_d['train'].select(range(10)))
 
 
 def predict_esn(ESN, dataloader_d):
+    """Compute predictions and accuracy."""
+
     # Train predictions and accuracy
     print("Predict on train set")
     train_pred, train_acc = ESN.predict(dataloader_d["train"], verbose=False)
-    # train_acc = train_acc.item() if ESN.device.type == 'cuda' else train_acc
+    #  train_acc = train_acc.item() if ESN.device.type == 'cuda' else train_acc
 
     # Test predictions and accuracy
     print("Predict on test set")
     test_pred, test_acc = ESN.predict(dataloader_d["test"], verbose=False)
-    # test_acc = test_acc.item() if ESN.device.type == 'cuda' else test_acc
+    #  test_acc = test_acc.item() if ESN.device.type == 'cuda' else test_acc
 
     return train_pred, train_acc, test_pred, test_acc
 
 
 def test_warm_up(create_dataset):
+    """Test warm_up method."""
+
     dataset_d, dataloader_d = create_dataset
     mode, distribution = 'recurrent_layer', 'uniform'
     ESN = instantiate_esn(mode=mode, distribution=distribution)
@@ -172,7 +176,8 @@ def test_warm_up(create_dataset):
 
 
 def test_fit_and_predict(create_dataset):
-    
+    """Test fit and predict methods"""
+
     def test(**kwargs):
         if kwargs['deep']:
             la_input_dim = kwargs['nb_layers'] * kwargs['dim']
