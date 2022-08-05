@@ -4,34 +4,18 @@ esntorch.core package
 Submodules
 ----------
 
-esntorch.core.baseline module
------------------------------
-
-.. automodule:: esntorch.core.baseline
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-esntorch.core.deep\_esn module
+esntorch.core.reservoir module
 ------------------------------
 
-.. automodule:: esntorch.core.deep_esn
+.. automodule:: esntorch.core.reservoir
    :members:
    :undoc-members:
    :show-inheritance:
 
-esntorch.core.deep\_reservoir module
-------------------------------------
+esntorch.core.pooling\_strategy module
+--------------------------------------
 
-.. automodule:: esntorch.core.deep_reservoir
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-esntorch.core.esn module
-------------------------
-
-.. automodule:: esntorch.core.esn
+.. automodule:: esntorch.core.pooling_strategy
    :members:
    :undoc-members:
    :show-inheritance:
@@ -44,26 +28,10 @@ esntorch.core.learning\_algo module
    :undoc-members:
    :show-inheritance:
 
-esntorch.core.merging\_strategy module
---------------------------------------
+esntorch.core.esn module
+------------------------
 
-.. automodule:: esntorch.core.merging_strategy
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-esntorch.core.nbsvm module
---------------------------
-
-.. automodule:: esntorch.core.nbsvm
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-esntorch.core.reservoir module
-------------------------------
-
-.. automodule:: esntorch.core.reservoir
+.. automodule:: esntorch.core.esn
    :members:
    :undoc-members:
    :show-inheritance:

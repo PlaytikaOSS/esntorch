@@ -1,58 +1,58 @@
-# EsnTorch (v0.0.2)
-**A library that implements echo state networks (ESNs) for natural language processing (NLP).**
+# EsnTorch (version 1.0.0)
+**Echo state networks (ESNs) for natural language processing (NLP).**
 
-EsnTorch is a library designed for the implementation of echo state networks (ESNs)
-in the context of natural language processing (NLP). 
-More specifically, EsnTorch allows to implement ESNs for text classification tasks.
-EsnTorch is written in PyTorch. 
+``EsnTorch`` is a user-friendly python library designed for the implementation of **echo state networks (ESNs)**
+in the context of **natural language processing (NLP)**, and more specifically, 
+in the context of **text classification**.
 
-This library works for Python 3.6 and higher and PyTorch 1.7.1 and higher.
+``EsnTorch`` is written in ``PyTorch`` and requires Python 3.7 or higher.
 
 
 Installation
 ------------
 
 This library is distributed on [PyPi](https://pypi.org/project/esntorch/) and
-can be installed with ``pip``. The latest release is version ``0.0.2``.
+can be installed with ``pip``, as shown below:
 
 ~~~~~~~~~~~~~~~~~~~~~~
 $ pip install esntorch 
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The command above will automatically install all the dependencies listed in ``requirements.txt``. 
+This command will automatically install the dependencies listed in ``requirements.txt`` 
+together with the library itself.
 
 Please visit the [installation page](docs/src/installation.rst) for more details.
 
 
-
-Documentation
--------------
-For more information, please read the full [documentation.](https://playtikaresearch.github.io/esntorch/index.html)
-
-
-
-More Info
----------
+GitHub
+------
 
 The source code of the library is available on [GitHub](https://github.com/PlaytikaResearch/EsnTorch). 
-It can be cloned via the following command:
+It can be cloned with the following command:
  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $ git clone https://github.com/PlaytikaResearch/EsnTorch.git
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can install the library and the dependencies with one of the following commands:
+Once cloned, you can install the library by running one of the following commands 
+from the root directory ``esntorch/``:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $ pip install .                        # install library + dependencies
 $ pip install -r requirements.txt      # install dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create the python wheel file ``pyabtest.whl`` for installation with ``pip`` run the following command:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ python setup.py sdist bdist_wheel
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Documentation
+-------------
+
+The [documentation page](https://playtikaresearch.github.io/esntorch/index.html) 
+provides a detailed documentation of the library as well as tutorials covering 
+its main functionalities.
+
+
+More Info
+---------
 
 To create the HTML documentation run the following commands:
 
@@ -63,8 +63,14 @@ $ make clean
 $ make html
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+To create the python wheel file ``pyabtest.whl`` for installation with ``pip``, run the following command:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ python setup.py sdist bdist_wheel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 License
 -------
 
-[Apache License, Version 2.0](LICENSE)
+[MIT License.](LICENSE)

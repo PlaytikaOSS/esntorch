@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>esntorch.utils package &mdash; esntorch 0.0.1 documentation</title>
+  <title>esntorch.utils package &mdash; esntorch 1.0.0 documentation</title>
   
 
   
@@ -87,7 +87,8 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../esn_description.html">Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial_ESN.html">Tutorial 1: Echo State Networks for Text Classification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial_DeepESN.html">Tutorial 2: Deep Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">Architecture</a></li>
 </ul>
 
@@ -189,24 +190,66 @@
 <dt class="sig sig-object py" id="esntorch.utils.embedding.EmbeddingModel">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">esntorch.utils.embedding.</span></span><span class="sig-name descname"><span class="pre">EmbeddingModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bert-base-uncased'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#esntorch.utils.embedding.EmbeddingModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>An EmbeddingModel object contain a BERT model and a method that implements the BERT embedding of batches.</p>
+<p>An EmbeddingModel object contain a Hugging Face model
+and a method that embeds batches according to this model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_name</strong> (<cite>str</cite>) – Name of the Hugging Face model and tokenizer.
+The list of possible models is provided here: <a class="reference external" href="https://huggingface.co/models">https://huggingface.co/models</a></p></li>
+<li><p><strong>device</strong> (<cite>torch.device</cite>) – GPU if available, CPU otherwise.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="esntorch.utils.embedding.EmbeddingModel.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#esntorch.utils.embedding.EmbeddingModel.device" title="Permalink to this definition">¶</a></dt>
+<dd><p>GPU if available, CPU otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>torch.device</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="esntorch.utils.embedding.EmbeddingModel.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><a class="headerlink" href="#esntorch.utils.embedding.EmbeddingModel.model_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the Hugging Face model.
+The list of or possible models is provided here: <a class="reference external" href="https://huggingface.co/models">https://huggingface.co/models</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>str</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="esntorch.utils.embedding.EmbeddingModel.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#esntorch.utils.embedding.EmbeddingModel.model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hugging Face model used for embedding_fn.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><cite>transformers.PreTrainedModel</cite></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="esntorch.utils.embedding.EmbeddingModel.get_embedding">
 <span class="sig-name descname"><span class="pre">get_embedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#esntorch.utils.embedding.EmbeddingModel.get_embedding" title="Permalink to this definition">¶</a></dt>
 <dd><p>Embeds a batch of token ids into a 3D tensor.
-We assume that the text is already tokenized into a batch of token ids.
-If the device is a GPU, the embedded batch is computed and put on the GPU.</p>
+If the device is a GPU, the embedded batch is put on GPU.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>batch</strong> (<em>torch.Tensor</em>) – 2D tensor: batch of token ids embedded.
-Each tensor column is a (possibly padded) sequence of token ids that represents one batch sentence.</p>
+<dd class="field-odd"><p><strong>batch</strong> (<cite>transformers.tokenization_utils_base.BatchEncoding</cite>) – Batch of token ids.</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>batch_emb</strong> – 3D tensor [batch size x max sentence length x embedding dim]
-BERT embedding of the batch of token ids.</p>
+<dd class="field-even"><p><strong>batch_emb</strong> – 3D tensor [max sentence length x batch size x embedding_fn dim]
+Embedding of the batch of token ids.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><cite>torch.Tensor</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -218,22 +261,22 @@ BERT embedding of the batch of token ids.</p>
 <span id="esntorch-utils-matrix-module"></span><h2>esntorch.utils.matrix module<a class="headerlink" href="#module-esntorch.utils.matrix" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="esntorch.utils.matrix.adjust_spectral_radius">
-<span class="sig-prename descclassname"><span class="pre">esntorch.utils.matrix.</span></span><span class="sig-name descname"><span class="pre">adjust_spectral_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_2D</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectral_radius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#esntorch.utils.matrix.adjust_spectral_radius" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">esntorch.utils.matrix.</span></span><span class="sig-name descname"><span class="pre">adjust_spectral_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor_2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spectral_radius</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#esntorch.utils.matrix.adjust_spectral_radius" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rescales a 2D tensor to have a given spectral radius.
-Converts the tensor into numpy, rescales it and convert back into torch.
+Converts the tensor into numpy, rescales it, and convert back into torch.
 Not optimal, but eigenvalues computation seems unstable in PyTorch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>tensor_2D</strong> (<em>torch.Tensor</em>) – 2D tensor to be rescaled.</p></li>
-<li><p><strong>spectral_radius</strong> (<em>float</em>) – Spectral radius obtained after rescaling.</p></li>
+<li><p><strong>tensor_2d</strong> (<cite>torch.Tensor</cite>) – 2D tensor to be rescaled.</p></li>
+<li><p><strong>spectral_radius</strong> (<cite>float</cite>) – Spectral radius obtained after rescaling.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>tensor_2D</strong> – Rescaled torch tensor that has the given spectral radius</p>
+<dd class="field-even"><p><strong>tensor_2D</strong> – Rescaled torch tensor with given spectral radius.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><cite>torch.Tensor</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -241,21 +284,24 @@ Not optimal, but eigenvalues computation seems unstable in PyTorch.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="esntorch.utils.matrix.duplicate_labels">
 <span class="sig-prename descclassname"><span class="pre">esntorch.utils.matrix.</span></span><span class="sig-name descname"><span class="pre">duplicate_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#esntorch.utils.matrix.duplicate_labels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Duplicates labels tensor according to the lengths tensor.
+<dd><p>Duplicates labels tensor according to the tensor lengths.
 More specifically, if labels = [l1, l2, l3] and lengths = [n1, n2, n3],
-then the function returns [l1,…(n1 times)…,l1, l2,…(n2 times)…,l2, l3,…(n3 times)…,l3].</p>
+then</p>
+<p>the function returns [l1,…(n1 times)…,l1, l2,…(n2 times)…,l2, l3,…(n3 times)…,l3].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>labels</strong> (<em>torch.Tensor</em>) – 1D tensor of labels</p></li>
-<li><p><strong>lengths</strong> (<em>torch.Tensor</em>) – 1D tensor of labels</p></li>
+<li><p><strong>labels</strong> (<cite>torch.Tensor</cite>) – <p>1D tensor of labels</p>
+<p>.</p>
+</p></li>
+<li><p><strong>lengths</strong> (<cite>torch.Tensor</cite>) – 1D tensor of lengths.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>labels_duplicated</strong> – 1D tensor of duplicated labels</p>
+<dd class="field-even"><p><strong>labels_duplicated</strong> – 1D tensor of duplicated labels.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><cite>torch.Tensor</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -267,27 +313,27 @@ then the function returns [l1,…(n1 times)…,l1, l2,…(n2 times)…,l2, l3,�
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>size</strong> (<em>tuple</em>) – Size of the generated tensor</p></li>
-<li><p><strong>sparsity</strong> (<em>float</em>) – Sparsity of the generated tensor (None by default).
-Corresponds to the percentage of tensor values that are set to zero.</p></li>
-<li><p><strong>mean</strong> (<em>float</em>) – Mean of the Gaussian distribution (0.0 by default).
-Note that after the sparsity mask has been applied and the tensor been rescaled
+<li><p><strong>size</strong> (<cite>tuple</cite>) – Size of the generated tensor.</p></li>
+<li><p><strong>sparsity</strong> (<cite>float</cite>) – Sparsity of the generated tensor (None by default).
+Corresponds to the percentage of tensor values set to zero.</p></li>
+<li><p><strong>mean</strong> (<cite>float</cite>) – Mean of the Gaussian distribution (0.0 by default).
+Note that, after the sparsity mask has been applied and the tensor been rescaled
 according to some spectral radius, the mean of the elements will be changed.</p></li>
-<li><p><strong>std</strong> (<em>float</em>) – Standard deviation of the Gaussian distribution (1.0 by default).
-Note that after the sparsity mask has been applied and the tensor been rescaled
+<li><p><strong>std</strong> (<cite>float</cite>) – Standard deviation of the Gaussian distribution (1.0 by default).
+Note that, after the sparsity mask has been applied and the tensor been rescaled
 according to some spectral radius, the std of the elements will be changed.</p></li>
-<li><p><strong>spectral_radius</strong> (<em>float</em>) – Spectral radius of the generated tensor (None by default).
+<li><p><strong>spectral_radius</strong> (<cite>float</cite>) – Spectral radius of the generated tensor (None by default).
 The spectral radius is the absolute value of the largest eigenvalue.
 The generated tensor is rescaled to have the given spectral radius.</p></li>
-<li><p><strong>dtype</strong> (<em>torch.float32</em>) – Type of the generated tensor (can be changed)</p></li>
+<li><p><strong>dtype</strong> (<cite>torch.float32</cite>) – Type of the generated tensor (can be changed).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>tensor_out</strong> – Torch tensor generated from a Gaussian distribution.
-The tensor has the required sparsity, mean, std and spectral radius.</p>
+The tensor has the required sparsity, modified mean, modified std and spectral radius.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><cite>torch.Tensor</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -299,15 +345,15 @@ The tensor has the required sparsity, mean, std and spectral radius.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>size</strong> (<em>tuple</em>) – Size of the generated tensor</p></li>
-<li><p><strong>sparsity</strong> (<em>float</em>) – Sparsity of the generated tensor (None by default).
-Corresponds to the percentage of tensor values that are set to zero.</p></li>
-<li><p><strong>scaling</strong> (<em>float</em>) – Scaling of the generated tensor (1.0 by default).
+<li><p><strong>size</strong> (<cite>tuple</cite>) – Size of the generated tensor.</p></li>
+<li><p><strong>sparsity</strong> (<cite>float</cite>) – Sparsity of the generated tensor (None by default).
+Corresponds to the percentage of tensor values set to zero.</p></li>
+<li><p><strong>scaling</strong> (<cite>float</cite>) – Scaling of the generated tensor (1.0 by default).
 Corresponds to the bounds between which the tensor values are generated.</p></li>
-<li><p><strong>spectral_radius</strong> (<em>float</em>) – Spectral radius of the generated tensor (None by default).
+<li><p><strong>spectral_radius</strong> (<cite>float</cite>) – Spectral radius of the generated tensor (None by default).
 The spectral radius is the absolute value of the largest eigenvalue.
 The generated tensor is rescaled to have the given spectral radius.</p></li>
-<li><p><strong>dtype</strong> (<em>torch.float32</em>) – Type of the generated tensor (can be changed)</p></li>
+<li><p><strong>dtype</strong> (<cite>torch.float32</cite>) – Type of the generated tensor (can be changed).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -315,7 +361,7 @@ The generated tensor is rescaled to have the given spectral radius.</p></li>
 The tensor has the required sparsity, scaling and spectral radius.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><cite>torch.Tensor</cite></p>
 </dd>
 </dl>
 </dd></dl>

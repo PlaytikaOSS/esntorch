@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; esntorch 0.0.1 documentation</title>
+  <title>Installation &mdash; esntorch 1.0.0 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorial" href="tutorial.html" />
+    <link rel="next" title="Tutorial 1: Echo State Networks for Text Classification" href="tutorial_ESN.html" />
     <link rel="prev" title="Echo State Networks for Text Classification" href="esn_description.html" /> 
 </head>
 
@@ -90,11 +90,13 @@
 <li class="toctree-l1"><a class="reference internal" href="esn_description.html">Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#id2">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#github">GitHub</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#more-info">More Info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ESN.html">Tutorial 1: Echo State Networks for Text Classification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_DeepESN.html">Tutorial 2: Deep Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Architecture</a></li>
 </ul>
 
@@ -189,30 +191,31 @@
 <span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <section id="id2">
 <h2>Installation<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
-<p>This library is distributed on <a class="reference external" href="https://pypi.org/project/esntorch/">PyPi</a> and
-can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code> using the command below. The latest release is version <code class="docutils literal notranslate"><span class="pre">0.0.2</span></code>.</p>
+<p>This library is distributed on [PyPi](<a class="reference external" href="https://pypi.org/project/esntorch/">https://pypi.org/project/esntorch/</a>) and
+can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, as shown below:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install esntorch
 </pre></div>
 </div>
-<p>The command above will automatically install all the dependencies listed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>.</p>
+<p>This command will automatically install the dependencies listed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>
+together with the library itself.</p>
+<p>Please visit the [installation page](docs/src/installation.rst) for more details.</p>
 </section>
-<section id="more-info">
-<h2>More Info<a class="headerlink" href="#more-info" title="Permalink to this headline">¶</a></h2>
-<p>The source code of the library is available on <a class="reference external" href="https://github.com/PlaytikaResearch/EsnTorch">GitHub</a>.
-It can be cloned via the following command:</p>
+<section id="github">
+<h2>GitHub<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
+<p>The source code of the library is available on [GitHub](<a class="reference external" href="https://github.com/PlaytikaResearch/EsnTorch">https://github.com/PlaytikaResearch/EsnTorch</a>).
+It can be cloned with the following command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/PlaytikaResearch/EsnTorch.git
 </pre></div>
 </div>
-<p>You can install the library and the dependencies with one of the following commands:</p>
+<p>Once cloned, you can install the library by running one of the following commands
+from the root directory <code class="docutils literal notranslate"><span class="pre">esntorch/</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install .                        # install library + dependencies
 $ pip install -r requirements.txt      # install dependencies
 </pre></div>
 </div>
-<p>To create the python wheel file <code class="docutils literal notranslate"><span class="pre">esntorch.whl</span></code> for installation with <code class="docutils literal notranslate"><span class="pre">pip</span></code>
-run the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python setup.py sdist bdist_wheel
-</pre></div>
-</div>
+</section>
+<section id="more-info">
+<h2>More Info<a class="headerlink" href="#more-info" title="Permalink to this headline">¶</a></h2>
 <p>To create the HTML documentation run the following commands:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd docs
 $ sphinx-apidoc -o source/ ../esntorch
@@ -220,10 +223,14 @@ $ make clean
 $ make html
 </pre></div>
 </div>
+<p>To create the python wheel file <code class="docutils literal notranslate"><span class="pre">pyabtest.whl</span></code> for installation with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, run the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># python setup.py sdist bdist_wheel</span>
+</pre></div>
+</div>
 </section>
 <section id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://opensource.org/licenses/MIT">MIT License</a></p>
+<p>[MIT License.](LICENSE)</p>
 </section>
 </section>
 
@@ -235,7 +242,7 @@ $ make html
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial_ESN.html" class="btn btn-neutral float-right" title="Tutorial 1: Echo State Networks for Text Classification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="esn_description.html" class="btn btn-neutral float-left" title="Echo State Networks for Text Classification" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
