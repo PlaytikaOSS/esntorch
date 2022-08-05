@@ -4,6 +4,7 @@ Generate documentation via Sphynx
 1. 
    1. The ``.rst`` files corresponding to the documentation pages written by myself are in ``docs/src``.
    2. The ``.rst`` files used by Sphynx to generate the code documentation are in ``docs/src/source``.
+
 Modify these ``.rst`` files at your convenience to build the documentation you like. 
 2. Run the following commands to automatically build the doc:
 
