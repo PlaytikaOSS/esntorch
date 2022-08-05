@@ -6,11 +6,12 @@ Generate documentation via Sphynx
    2. The ``.rst`` files used by Sphynx to generate the code documentation are in ``docs/src/source``.
 2. Run the following commands to automatically build the doc:
 
-
-    $ cd docs/src/
-    $ sphinx-apidoc -o source/ ../../esntorch
-    $ make clean
-    $ make html
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ cd docs/src/
+$ sphinx-apidoc -o source/ ../../esntorch
+$ make clean
+$ make html
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3. Copy all files in the folder `/src/build/html/` directly into `docs/`. MAke ure you keep the `/docs/src/` folder.
 4. Delete the created folder `/src/build/`.
