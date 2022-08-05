@@ -32,8 +32,10 @@
 # *** END INSTRUCTIONS ***
 
 
-from esntorch.utils.matrix import *
+import esntorch.utils.matrix as mt
+import torch
 import pytest
+
 
 def test_generate_uniform_matrix():
     """Tests the generate_uniform_matrix function."""
@@ -45,12 +47,12 @@ def test_generate_uniform_matrix():
                 'dtype': torch.float32
                 }
 
-    x = generate_uniform_matrix(**params_d)
+    x = mt.generate_uniform_matrix(**params_d)
 
     # Checks tensor size
     assert x.shape == params_d['size']
     # Checks tensor sparsity
-    sparsity = torch.sum(x == 0) / (x.shape[0]*x.shape[1])
+    sparsity = torch.sum(x == 0) / (x.shape[0] * x.shape[1])
     assert params_d['sparsity'] == pytest.approx(sparsity, 0.05)
     # Checks tensor scaling
     assert x.min() >= -params_d['scaling']
@@ -74,12 +76,12 @@ def test_generate_gaussian_matrix():
                 'dtype': torch.float32
                 }
 
-    x = generate_gaussian_matrix(**params_d)
+    x = mt.generate_gaussian_matrix(**params_d)
 
     # Checks tensor size
     assert x.shape == params_d['size']
     # Checks tensor sparsity
-    sparsity = torch.sum(x == 0) / (x.shape[0]*x.shape[1])
+    sparsity = torch.sum(x == 0) / (x.shape[0] * x.shape[1])
     assert params_d['sparsity'] == pytest.approx(sparsity, 0.05)
     # Checks tensor spectral radius
     eigenvalues = torch.eig(x)[0]
@@ -97,7 +99,7 @@ def test_generate_gaussian_matrix():
                 'dtype': torch.float32
                 }
 
-    x = generate_gaussian_matrix(**params_d)
+    x = mt.generate_gaussian_matrix(**params_d)
     # Checks tensor mean
     print('MEAN', x.mean())
     assert x.mean() == pytest.approx(params_d['mean'], 0.05)
@@ -110,21 +112,22 @@ def test_adjust_spectral_radius():
 
     x = torch.rand(size=(30, 30))
     rho_x = 0.94
-    x = adjust_spectral_radius(x, rho_x)
+    x = mt.adjust_spectral_radius(x, rho_x)
 
     # Checks tensor spectral radius
     eigenvalues = torch.eig(x)[0]
     rho = max([torch.norm(lamda) for lamda in eigenvalues])
     assert rho == pytest.approx(rho_x, 0.01)
 
+
 def test_duplicate_labels():
     """Tests the duplicate_labels function."""
 
     labels = torch.randint(low=0, high=5, size=(7,))
     lengths = torch.randint(low=10, high=20, size=(7,))
-    x = duplicate_labels(labels, lengths)
+    x = mt.duplicate_labels(labels, lengths)
 
     for i, (label, n) in enumerate(zip(labels, lengths)):
         y = x[:n]
-        assert torch.all(y == torch.tensor([label]*n))
+        assert torch.all(y == torch.tensor([label] * n))
         x = x[n:]

@@ -11,8 +11,6 @@ Architecture
 * ``esntorch.core`` contains the core implementation of the ESN.
 
     - :mod:`esntorch.core.reservoir`
-    - :mod:`esntorch.core.deep_reservoir`
-    - :mod:`esntorch.core.merging_strategy`
+    - :mod:`esntorch.core.pooling_strategy`
     - :mod:`esntorch.core.learning_algo`
     - :mod:`esntorch.core.esn`
-    - :mod:`esntorch.core.deep_esn`

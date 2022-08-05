@@ -86,8 +86,8 @@ training process targeted at this *many-to-one* paradigm.
 Our training paradigm consist of the four following steps:
     #. Embed the successive texts (FastTest, GloVe, etc.);
     #. Pass the embedded texts into the ESN;
-    #. Merge the reservoir states associated to the successive texts (last, mean, etc.);
-    #. Learn the association between the merged states and associated targets.
+    #. Pool the reservoir states associated to the successive texts (last, mean, etc.);
+    #. Learn the association between the polled states and associated targets.
 
 The training process is illustrated in the figure below.
 

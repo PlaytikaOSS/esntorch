@@ -26,14 +26,15 @@
 # Also, use torch version 1.7.1: some functions do not work with torch version 1.9.0
 # ---------------
 # To launch this test file only, run the following command:
-# pytest tests/core/test_merging_strategy.py
+# pytest tests/core/test_pooling_strategy.py
 # To launch all tests inside /esntorch/core/ with line coverage, run the following command:
 # pytest --cov tests/core/
 # *** END INSTRUCTIONS ***
 import torch
 
-from esntorch.core.merging_strategy import *
+from esntorch.core.pooling_strategy import Pooling
 import pytest
+
 
 def test_init():
     """Tests the __init__ method."""
@@ -41,12 +42,12 @@ def test_init():
     weights = torch.randint(low=0, high=3, size=(32, 9))
     lexicon = torch.randint(low=0, high=3, size=(50,))
 
-    m = MergingStrategy(merging_strategy='mean', weights=weights, lexicon=lexicon)
-    assert m.merging_strategy == 'mean'
+    m = Pooling(pooling_strategy='mean', weights=weights, lexicon=lexicon)
+    assert m.pooling_strategy == 'mean'
     assert torch.all(m.weights == weights)
     assert torch.all(m.lexicon == lexicon)
 
-    m = MergingStrategy(merging_strategy='mean')
+    m = Pooling(pooling_strategy='mean')
     assert m.weights is None
     assert m.lexicon is None
 
@@ -62,8 +63,8 @@ def test_merge_batch():
     weights = torch.randint(low=0, high=3, size=(32, 9))
     lexicon = torch.randint(low=0, high=3, size=(50,))
 
-    # Test merging strategy None
-    m = MergingStrategy(merging_strategy=None)
+    # Test pooling strategy None
+    m = Pooling(pooling_strategy=None)
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (torch.sum(lengths), states.shape[2])
     for i, l in enumerate(lengths):
@@ -71,44 +72,44 @@ def test_merge_batch():
         assert torch.all(y == states[i, :l, :])
         x = x[l:]
 
-    # Test merging strategy 'first'
-    m = MergingStrategy(merging_strategy='first')
+    # Test pooling strategy 'first'
+    m = Pooling(pooling_strategy='first')
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     assert torch.all(x == states[:, 0, :])
 
-    # Test merging strategy 'last'
-    m = MergingStrategy(merging_strategy='last')
+    # Test pooling strategy 'last'
+    m = Pooling(pooling_strategy='last')
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        assert torch.all(x[i, :] == states[i, l-1, :])
+        assert torch.all(x[i, :] == states[i, l - 1, :])
 
-    # Test merging strategy 'mean'
-    m = MergingStrategy(merging_strategy='mean')
+    # Test pooling strategy 'mean'
+    m = Pooling(pooling_strategy='mean')
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
         diff = torch.all(x[i, :] == torch.mean(states[i, :l, :], axis=0))
         assert pytest.approx(diff, 0.0001)
 
-    # Test merging strategy 'weighted'
-    m = MergingStrategy(merging_strategy='weighted')
+    # Test pooling strategy 'weighted'
+    m = Pooling(pooling_strategy='weighted')
     x = m(states=states, lengths=lengths, texts=texts)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        mean_state = torch.vstack([states[i, j, :]*weights[i, j] for j in range(l)])
+        mean_state = torch.vstack([states[i, j, :] * weights[i, j] for j in range(l)])
         mean_state = torch.sum(mean_state, dim=0) / l
         diff = torch.all(x[i, :] == mean_state)
         assert pytest.approx(diff, 0.0001)
 
-    # Test merging strategy 'lexicon_weighted'
-    m = MergingStrategy(merging_strategy='lexicon_weighted', lexicon=lexicon)
+    # Test pooling strategy 'lexicon_weighted'
+    m = Pooling(pooling_strategy='lexicon_weighted', lexicon=lexicon)
     x = m(states=states, lengths=lengths, texts=texts)
     weights = lexicon[texts].transpose(0, 1)
     assert x.shape == (states.shape[0], states.shape[2])
     for i, l in enumerate(lengths):
-        mean_state = torch.vstack([states[i, j, :]*weights[i, j] for j in range(l)])
+        mean_state = torch.vstack([states[i, j, :] * weights[i, j] for j in range(l)])
         mean_state = torch.sum(mean_state, dim=0) / weights.sum(dim=1)[i]
         diff = torch.all(x[i, :] == mean_state)
         assert pytest.approx(diff, 0.0001)

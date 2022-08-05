@@ -5,42 +5,47 @@ Installation
 ============
 
 
+
+
 Installation
 ------------
 
-This library is distributed on `PyPi <https://pypi.org/project/esntorch/>`_ and
-can be installed with ``pip`` using the command below. The latest release is version ``0.0.2``.
+This library is distributed on [PyPi](https://pypi.org/project/esntorch/) and
+can be installed with ``pip``, as shown below:
 
 .. code::
 
     $ pip install esntorch
 
-The command above will automatically install all the dependencies listed in ``requirements.txt``.
+This command will automatically install the dependencies listed in ``requirements.txt``
+together with the library itself.
+
+Please visit the [installation page](docs/src/installation.rst) for more details.
 
 
-More Info
----------
+GitHub
+------
 
-The source code of the library is available on `GitHub <https://github.com/PlaytikaResearch/EsnTorch>`_.
-It can be cloned via the following command:
+The source code of the library is available on [GitHub](https://github.com/PlaytikaResearch/EsnTorch).
+It can be cloned with the following command:
 
 .. code::
 
     $ git clone https://github.com/PlaytikaResearch/EsnTorch.git
 
-You can install the library and the dependencies with one of the following commands:
+
+Once cloned, you can install the library by running one of the following commands
+from the root directory ``esntorch/``:
 
 .. code::
 
     $ pip install .                        # install library + dependencies
     $ pip install -r requirements.txt      # install dependencies
 
-To create the python wheel file ``esntorch.whl`` for installation with ``pip``
-run the following command:
 
-.. code::
 
-    $ python setup.py sdist bdist_wheel
+More Info
+---------
 
 To create the HTML documentation run the following commands:
 
@@ -52,8 +57,15 @@ To create the HTML documentation run the following commands:
     $ make html
 
 
+To create the python wheel file ``pyabtest.whl`` for installation with ``pip``, run the following command:
+
+.. code::
+
+    # python setup.py sdist bdist_wheel
+
+
+
 License
 -------
 
-`MIT License <https://opensource.org/licenses/MIT>`_
-
+[MIT License.](LICENSE)

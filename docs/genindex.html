@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; esntorch 0.0.1 documentation</title>
+  <title>Index &mdash; esntorch 1.0.0 documentation</title>
   
 
   
@@ -86,7 +86,8 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="esn_description.html">Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ESN.html">Tutorial 1: Echo State Networks for Text Classification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_DeepESN.html">Tutorial 2: Deep Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Architecture</a></li>
 </ul>
 
@@ -156,7 +157,6 @@
 
 <div class="genindex-jumpbox">
  <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#E"><strong>E</strong></a>
@@ -164,11 +164,9 @@
  | <a href="#G"><strong>G</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
- | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#T"><strong>T</strong></a>
- | <a href="#U"><strong>U</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
 </div>
@@ -180,18 +178,10 @@
   </ul></td>
 </tr></table>
 
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.baseline.Baseline">Baseline (class in esntorch.core.baseline)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.baseline.CustomBaseline">CustomBaseline (class in esntorch.core.baseline)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.create_layer">create_layer() (in module esntorch.core.reservoir)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -199,13 +189,13 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.deep_esn.DeepEchoStateNetwork">DeepEchoStateNetwork (class in esntorch.core.deep_esn)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.DeepLayer">DeepLayer (class in esntorch.core.reservoir)</a>
 </li>
       <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.DeepNN">DeepNN (class in esntorch.core.learning_algo)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.deep_reservoir.DeepReservoir">DeepReservoir (class in esntorch.core.deep_reservoir)</a>
+      <li><a href="source/esntorch.utils.html#esntorch.utils.embedding.EmbeddingModel.device">device (esntorch.utils.embedding.EmbeddingModel attribute)</a>
 </li>
       <li><a href="source/esntorch.utils.html#esntorch.utils.matrix.duplicate_labels">duplicate_labels() (in module esntorch.utils.matrix)</a>
 </li>
@@ -234,35 +224,12 @@
 </li>
       </ul></li>
       <li>
-    esntorch.core.baseline
-
-      <ul>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.baseline">module</a>
-</li>
-      </ul></li>
-      <li>
-    esntorch.core.deep_esn
-
-      <ul>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.deep_esn">module</a>
-</li>
-      </ul></li>
-      <li>
-    esntorch.core.deep_reservoir
-
-      <ul>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.deep_reservoir">module</a>
-</li>
-      </ul></li>
-      <li>
     esntorch.core.esn
 
       <ul>
         <li><a href="source/esntorch.core.html#module-esntorch.core.esn">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     esntorch.core.learning_algo
 
@@ -270,18 +237,13 @@
         <li><a href="source/esntorch.core.html#module-esntorch.core.learning_algo">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
-    esntorch.core.merging_strategy
+    esntorch.core.pooling_strategy
 
       <ul>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.merging_strategy">module</a>
-</li>
-      </ul></li>
-      <li>
-    esntorch.core.nbsvm
-
-      <ul>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.nbsvm">module</a>
+        <li><a href="source/esntorch.core.html#module-esntorch.core.pooling_strategy">module</a>
 </li>
       </ul></li>
       <li>
@@ -321,33 +283,25 @@
       <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.fit">fit() (esntorch.core.esn.EchoStateNetwork method)</a>
 
       <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.GaussianNBLayer.fit">(esntorch.core.learning_algo.GaussianNBLayer method)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LinearSVC.fit">(esntorch.core.learning_algo.LinearSVC method)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LinearSVCLayer.fit">(esntorch.core.learning_algo.LinearSVCLayer method)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression2.fit">(esntorch.core.learning_algo.LogisticRegression2 method)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.MultinomialNBLayer.fit">(esntorch.core.learning_algo.MultinomialNBLayer method)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RandomForest.fit">(esntorch.core.learning_algo.RandomForest method)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression_skl.fit">(esntorch.core.learning_algo.LogisticRegression_skl method)</a>
 </li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression.fit">(esntorch.core.learning_algo.RidgeRegression method)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.fit">(in module esntorch.core.nbsvm)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression_skl.fit">(esntorch.core.learning_algo.RidgeRegression_skl method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.deep_reservoir.DeepReservoir.forward">forward() (esntorch.core.deep_reservoir.DeepReservoir method)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.DeepNN.forward">forward() (esntorch.core.learning_algo.DeepNN method)</a>
 
       <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.DeepNN.forward">(esntorch.core.learning_algo.DeepNN method)</a>
-</li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression.forward">(esntorch.core.learning_algo.LogisticRegression method)</a>
 </li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression.forward">(esntorch.core.learning_algo.RidgeRegression method)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Reservoir.forward">(esntorch.core.reservoir.Reservoir method)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Layer.forward">(esntorch.core.reservoir.Layer method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -356,17 +310,15 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.GaussianNBLayer">GaussianNBLayer (class in esntorch.core.learning_algo)</a>
-</li>
-      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.GaussianReservoir">GaussianReservoir (class in esntorch.core.reservoir)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/esntorch.utils.html#esntorch.utils.matrix.generate_gaussian_matrix">generate_gaussian_matrix() (in module esntorch.utils.matrix)</a>
 </li>
       <li><a href="source/esntorch.utils.html#esntorch.utils.matrix.generate_uniform_matrix">generate_uniform_matrix() (in module esntorch.utils.matrix)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/esntorch.utils.html#esntorch.utils.embedding.EmbeddingModel.get_embedding">get_embedding() (esntorch.utils.embedding.EmbeddingModel method)</a>
+</li>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.get_parameters">get_parameters() (in module esntorch.core.reservoir)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -374,13 +326,19 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LinearSVCLayer">LinearSVCLayer (class in esntorch.core.learning_algo)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Layer">Layer (class in esntorch.core.reservoir)</a>
+</li>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.LayerLinear">LayerLinear (class in esntorch.core.reservoir)</a>
+</li>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.LayerRecurrent">LayerRecurrent (class in esntorch.core.reservoir)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LinearSVC">LinearSVC (class in esntorch.core.learning_algo)</a>
+</li>
       <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression">LogisticRegression (class in esntorch.core.learning_algo)</a>
 </li>
-      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression2">LogisticRegression2 (class in esntorch.core.learning_algo)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression_skl">LogisticRegression_skl (class in esntorch.core.learning_algo)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -388,9 +346,11 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.merging_strategy.MergingStrategy.merge_batch">merge_batch() (esntorch.core.merging_strategy.MergingStrategy method)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.pooling_strategy.Pooling.merge_batch">merge_batch() (esntorch.core.pooling_strategy.Pooling method)</a>
 </li>
-      <li><a href="source/esntorch.core.html#esntorch.core.merging_strategy.MergingStrategy">MergingStrategy (class in esntorch.core.merging_strategy)</a>
+      <li><a href="source/esntorch.utils.html#esntorch.utils.embedding.EmbeddingModel.model">model (esntorch.utils.embedding.EmbeddingModel attribute)</a>
+</li>
+      <li><a href="source/esntorch.utils.html#esntorch.utils.embedding.EmbeddingModel.model_name">model_name (esntorch.utils.embedding.EmbeddingModel attribute)</a>
 </li>
       <li>
     module
@@ -400,19 +360,11 @@
 </li>
         <li><a href="source/esntorch.core.html#module-esntorch.core">esntorch.core</a>
 </li>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.baseline">esntorch.core.baseline</a>
-</li>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.deep_esn">esntorch.core.deep_esn</a>
-</li>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.deep_reservoir">esntorch.core.deep_reservoir</a>
-</li>
         <li><a href="source/esntorch.core.html#module-esntorch.core.esn">esntorch.core.esn</a>
 </li>
         <li><a href="source/esntorch.core.html#module-esntorch.core.learning_algo">esntorch.core.learning_algo</a>
 </li>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.merging_strategy">esntorch.core.merging_strategy</a>
-</li>
-        <li><a href="source/esntorch.core.html#module-esntorch.core.nbsvm">esntorch.core.nbsvm</a>
+        <li><a href="source/esntorch.core.html#module-esntorch.core.pooling_strategy">esntorch.core.pooling_strategy</a>
 </li>
         <li><a href="source/esntorch.core.html#module-esntorch.core.reservoir">esntorch.core.reservoir</a>
 </li>
@@ -424,36 +376,16 @@
 </li>
       </ul></li>
   </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.MultinomialNBLayer">MultinomialNBLayer (class in esntorch.core.learning_algo)</a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="N">N</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.nbsvm">nbsvm() (in module esntorch.core.nbsvm)</a>
-</li>
-  </ul></td>
 </tr></table>
 
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.pr">pr() (in module esntorch.core.nbsvm)</a>
-</li>
-      <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.pr_not">pr_not() (in module esntorch.core.nbsvm)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.pooling_strategy.Pooling">Pooling (class in esntorch.core.pooling_strategy)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.predict">predict() (esntorch.core.esn.EchoStateNetwork method)</a>
-
-      <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.predict">(in module esntorch.core.nbsvm)</a>
-</li>
-      </ul></li>
-      <li><a href="source/esntorch.core.html#esntorch.core.nbsvm.prepare_datasets">prepare_datasets() (in module esntorch.core.nbsvm)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -461,19 +393,13 @@
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RandomForest">RandomForest (class in esntorch.core.learning_algo)</a>
-</li>
-      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Reservoir">Reservoir (class in esntorch.core.reservoir)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Layer.reverse_forward">reverse_forward() (esntorch.core.reservoir.Layer method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.deep_reservoir.DeepReservoir.reverse_forward">reverse_forward() (esntorch.core.deep_reservoir.DeepReservoir method)</a>
-
-      <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Reservoir.reverse_forward">(esntorch.core.reservoir.Reservoir method)</a>
-</li>
-      </ul></li>
       <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression">RidgeRegression (class in esntorch.core.learning_algo)</a>
+</li>
+      <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression_skl">RidgeRegression_skl (class in esntorch.core.learning_algo)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -481,50 +407,38 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.baseline.Baseline.training">training (esntorch.core.baseline.Baseline attribute)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.training">training (esntorch.core.esn.EchoStateNetwork attribute)</a>
 
       <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.baseline.CustomBaseline.training">(esntorch.core.baseline.CustomBaseline attribute)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.deep_esn.DeepEchoStateNetwork.training">(esntorch.core.deep_esn.DeepEchoStateNetwork attribute)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.deep_reservoir.DeepReservoir.training">(esntorch.core.deep_reservoir.DeepReservoir attribute)</a>
-</li>
-        <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.training">(esntorch.core.esn.EchoStateNetwork attribute)</a>
-</li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.DeepNN.training">(esntorch.core.learning_algo.DeepNN attribute)</a>
 </li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.LogisticRegression.training">(esntorch.core.learning_algo.LogisticRegression attribute)</a>
 </li>
         <li><a href="source/esntorch.core.html#esntorch.core.learning_algo.RidgeRegression.training">(esntorch.core.learning_algo.RidgeRegression attribute)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.GaussianReservoir.training">(esntorch.core.reservoir.GaussianReservoir attribute)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.DeepLayer.training">(esntorch.core.reservoir.DeepLayer attribute)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Reservoir.training">(esntorch.core.reservoir.Reservoir attribute)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Layer.training">(esntorch.core.reservoir.Layer attribute)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.UniformReservoir.training">(esntorch.core.reservoir.UniformReservoir attribute)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.LayerLinear.training">(esntorch.core.reservoir.LayerLinear attribute)</a>
+</li>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.LayerRecurrent.training">(esntorch.core.reservoir.LayerRecurrent attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-</tr></table>
-
-<h2 id="U">U</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.reservoir.UniformReservoir">UniformReservoir (class in esntorch.core.reservoir)</a>
-</li>
   </ul></td>
 </tr></table>
 
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/esntorch.core.html#esntorch.core.deep_reservoir.DeepReservoir.warm_up">warm_up() (esntorch.core.deep_reservoir.DeepReservoir method)</a>
+      <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.warm_up">warm_up() (esntorch.core.esn.EchoStateNetwork method)</a>
 
       <ul>
-        <li><a href="source/esntorch.core.html#esntorch.core.esn.EchoStateNetwork.warm_up">(esntorch.core.esn.EchoStateNetwork method)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.DeepLayer.warm_up">(esntorch.core.reservoir.DeepLayer method)</a>
 </li>
-        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Reservoir.warm_up">(esntorch.core.reservoir.Reservoir method)</a>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.Layer.warm_up">(esntorch.core.reservoir.Layer method)</a>
+</li>
+        <li><a href="source/esntorch.core.html#esntorch.core.reservoir.LayerRecurrent.warm_up">(esntorch.core.reservoir.LayerRecurrent method)</a>
 </li>
       </ul></li>
   </ul></td>

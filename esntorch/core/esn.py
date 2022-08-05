@@ -20,247 +20,191 @@
 
 import torch
 import torch.nn as nn
+from transformers import BatchEncoding
 import esntorch.utils.matrix as mat
 import esntorch.core.reservoir as res
 import esntorch.core.learning_algo as la
-import esntorch.core.merging_strategy as ms
+import esntorch.core.pooling_strategy as ps
+from tqdm.notebook import tqdm_notebook
 
 
 class EchoStateNetwork(nn.Module):
     """
-    Implements the Echo State Network (ESN) per se.
-    An ESN consists of the combination of a reservoir, a merging strategy and a learning algorithm.
+    Implements an **echo state Nnetwork (ESN)** per se.
+    An ESN consists of the combination of
+    a **layer**, a **pooling strategy** and a **learning algorithm**:
+
+    ESN = LAYER + POOLING + LEARNING ALGO.
+
+    Recalling that a general **layer** is itslef composed of
+    an **embedding** and a **reservoir** of neurons, one finally has:
+
+    ESN = EMBEDDING + RESERVOIR + POOLING + LEARNING ALGO.
 
     Parameters
     ----------
-    embedding_weights : torch.Tensor
-        Embedding matrix.
-    distribution : str
-        Distribution of the reservoir: 'uniform' or 'gaussian'
-    input_dim : int
-        Input dimension.
-    reservoir_dim : int
-        Reservoir dimension.
-    bias_scaling : float
-        Bias scaling: bounds used for the bias random generation.
-    sparsity : float
-        Sparsity of the reservoir ((between 0 and 1))
-    spectral_radius : float
-        Spectral radius of the reservoir weights.
-        Should theoretically be below 1, but slightly above 1 works in practice.
-    leaking_rate : float (between 0 and 1)
-        Leaking rate of teh reservoir (between 0 and 1).
-        Determines the amount of last state and current input involved in the current state updating.
-    activation_function : str
-        Activation function of the reservoir cells ('tanh' by default).
-    input_scaling : float
-        Input scaling: bounds used for the input weights random generation (if distribution == 'uniform').
-    mean : float
-        Mean of the input and reservoir weights (if distribution == 'gaussian')
-    std : float
-        Standard deviation of the input and reservoir weights (if distribution == 'gaussian')
-    learning_algo : src.models.learning_algo.RidgeRegression, src.models.learning_algo.LogisticRegression
-        Learning algorithm used to learn the targets from the reservoir (merged) states.
-    criterion : torch.nn.modules.loss
-        Criterion used to compute the loss between tagets and predictions (only if leaning_algo ≠ RidgeRegression).
-    optimizer : torch.optim
-        Optimizer used in the gradient descent method (only if leaning_algo ≠ RidgeRegression).
-    merging_strategy : src.models.merging_strategy.MergingStrategy
-        Merging strategy used to merge the sucessive reservoir states.
-    bidirectional : bool
-        Flag for bi-directionality.
-    mode : str
-        The ESN can be used in different modes in order to implement kinds of models
-        (classical ESN, baselines, etc.):
-        If mode=='esn', the classical ESN is implemented (EMB + RESERVOIR + LA).
-        If mode=='linear_layer', the Custom Baseline is implemented (EMB + LINEAR_LAYER + LA).
-        If mode=='no_layer', the Simple Baseline is implemented (EMB + LA).
-    seed : torch._C.Generator
-        Random seed.
+    learning_algo : `object`
+        A learning algo used to train the netwok (see learning_algo.py).
+    criterion : `torch.nn.Module` or `None`
+        Pytorch loss used to train the ESN (in case of non-direct methods).
+    optimizer : `torch.optim.Optimizer` or `None`
+        Pytorch optimizer used to train the ESN (in case of non-direct methods).
+    pooling_strategy : `str`
+        Pooling strategy to be used: 'mean', 'first', 'last',
+        'weighted', 'lexicon_weighted', None,
+    bidirectional : `bool`
+        Whether to implement a bi-directional ESN or not,
+    lexicon : `torch.Tensor` or `None`
+        If not None, lexicon to be used with the pooling strategy 'lexicon_weighted'.
+    deep : `bool`
+        Whether to implement a deep ESN or not.
+    device : `int`
+        The device to be used: cpu or gpu.
+    **kwargs : optional
+        Other keyword arguments.
     """
 
-    # Constructor
     def __init__(self,
-                 embedding_weights=None,
-                 distribution=None,
-                 input_dim=None,
-                 reservoir_dim=None,
-                 bias_scaling=None,
-                 sparsity=None,
-                 spectral_radius=None,
-                 leaking_rate=1.0,
-                 activation_function='tanh',
-                 input_scaling=None,
-                 mean=0.0,
-                 std=1.0,
                  learning_algo=None,
                  criterion=None,
                  optimizer=None,
-                 merging_strategy=None,
+                 pooling_strategy=None,
                  bidirectional=False,
                  lexicon=None,
-                 seed=42,
-                 mode='esn',
+                 deep=False,
                  device=torch.device('cpu'),
+                 **kwargs
                  ):
 
-        super(EchoStateNetwork, self).__init__()
-
+        super().__init__()
         self.device = device
 
-        if distribution == 'uniform':
-            self.reservoir = res.UniformReservoir(embedding_weights=embedding_weights,
-                                                  input_dim=input_dim,
-                                                  input_scaling=input_scaling,
-                                                  reservoir_dim=reservoir_dim,
-                                                  bias_scaling=bias_scaling,
-                                                  sparsity=sparsity,
-                                                  spectral_radius=spectral_radius,
-                                                  leaking_rate=leaking_rate,
-                                                  activation_function=activation_function,
-                                                  seed=seed,
-                                                  device=self.device)
-
-        elif distribution == 'gaussian':
-            self.reservoir = res.GaussianReservoir(embedding_weights=embedding_weights,
-                                                   input_dim=input_dim,
-                                                   input_scaling=input_scaling,
-                                                   reservoir_dim=reservoir_dim,
-                                                   bias_scaling=bias_scaling,
-                                                   sparsity=sparsity,
-                                                   spectral_radius=spectral_radius,
-                                                   leaking_rate=leaking_rate,
-                                                   activation_function=activation_function,
-                                                   mean=mean,
-                                                   std=std,
-                                                   seed=seed,
-                                                   device=self.device)
-
+        if deep:
+            self.layer = res.DeepLayer(device=device, **kwargs)
         else:
-            print("Invalid distribution of reservoir ('uniform' or 'gaussian')...")
-            self.reservoir = None
+            self.layer = res.create_layer(device=device, **kwargs)
 
-        self.merging_strategy = ms.MergingStrategy(merging_strategy, lexicon=lexicon)
+        self.pooling_strategy = ps.Pooling(pooling_strategy, lexicon=lexicon)
 
         self.learning_algo = learning_algo
         self.criterion = criterion
         self.optimizer = optimizer
         self.bidirectional = bidirectional
 
-        self.mode = mode
-
-    def warm_up(self, warm_up_sequence):
+    def warm_up(self, dataset):
         """
-        Passes a warm up sequence to the ESN and set the warm state as the new initial state.
+        Warms up the ESN (in the case its reservoir is built with a ``LayerRecurrent``).
+        Passes successive sequences through the ESN and updates its initial state.
+        In this case, there is no reservoir, hence nothing is done.
+        This method will be overwritten by the next children classes.
 
         Parameters
         ----------
-        warm_up_sequence : torch.Tensor
-            1D tensor: word indices of the warm up sentence.
+        dataset : `datasets.arrow_dataset.Dataset`
+            Datasets of sentences to be used for the warming.
         """
 
-        self.reservoir.warm_up(warm_up_sequence)
+        for i, text in enumerate(dataset):
 
-    def _apply_merge_strategy(self, states, lengths, texts, 
-                              reversed_states=None, additional_fts=None):
+            for k, v in text.items():
+                text[k] = v.unsqueeze(0)
+
+            text = BatchEncoding(text)
+            self.layer.warm_up(text)
+
+    def _apply_pooling_strategy(self, states, lengths, texts,
+                                reversed_states=None, additional_fts=None):
         """
-        Merges the corresponding reservoir states depending on the merging strategy
-        and the whether to apply bi-directionality or not.
+        Pools the reservoir states according to a pooling strategy.
+        If the ESN is bi-directional, the reversed states are also used.
 
         Parameters
         ----------
-        states : torch.Tensor
-            3D tensor: the states of the token that went through the reservoir
-        lengths : torch.Tensor
-            1D tensor, the token sentences true lengths.
-        texts: torch.Tensor
-            2D tensor containing word indices of the texts in the batch.
-        reversed_states : torch.Tensor
-            3D tensor: Optional, the states of the token that went through the reservoir
-            in the reverse order when the bi-directional flag is set.
-        additional_fts : None, torch.Tensor
-            2D tensor containing new features (e.g. tf-idf) 
-            to be concatenated to each merged state (batch size x dim additional_fts).
+        states : `torch.Tensor`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reservoir states.
+        lengths : `torch.Tensor`
+           1D tensor [batch size] containing the lengths of all sentences in the batch.
+        texts: `transformers.tokenization_utils_base.BatchEncoding`
+            Batch of token ids.
+        reversed_states : `torch.Tensor` or `None`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reversed reservoir states.
+        additional_fts : `torch.Tensor` or `None`
+            In the case of 'mean_and_additional_fts' pooling.
+            2D tensor [batch size x fts dim] containing the additional features
+            to be concatenated to the merged states.
 
         Returns
         -------
         final_states : torch.Tensor
-            2D tensor : the merged tensors.
+            2D tensor [batch size x reservoir dim] containing the merged states.
         """
         if self.bidirectional:
-            if self.merging_strategy.merging_strategy is None:
-                # concatenate the normal and reversed states along the reservoir dimension while not
-                # forgetting to first put the reversed words in the correct order, then apply the merging.
+            if self.pooling_strategy.pooling_strategy is None:
+                # first concatenate the normal and reversed states along the layer dimension, then apply the pooling.
                 restored_states = reversed_states.clone()
                 for i, l in enumerate(lengths):
                     restored_states[i, :l] = torch.flip(restored_states[i, :l], [0])
 
                 concatenated_states = torch.cat([states, restored_states], dim=2)
-                final_states = self.merging_strategy(concatenated_states, lengths, texts)
+                final_states = self.pooling_strategy(concatenated_states, lengths, texts)
             else:
-                # concatenate the normal and reversed states after their merging
-                normal_merged_states = self.merging_strategy(states, lengths, texts, additional_fts)
-                reversed_merged_states = self.merging_strategy(reversed_states, lengths, texts)
-                # concatenate the batches across features dimension
+                # first pool the states and reverse states, then concatenate the merged states
+                normal_merged_states = self.pooling_strategy(states, lengths, texts, additional_fts)
+                reversed_merged_states = self.pooling_strategy(reversed_states, lengths, texts)
+                # concatenate batches across features dimension
                 final_states = torch.cat([normal_merged_states, reversed_merged_states], dim=1)
         else:
-            final_states = self.merging_strategy(states, lengths, texts, additional_fts)
+            final_states = self.pooling_strategy(states, lengths, texts, additional_fts)
 
         return final_states
 
     def _fit_direct(self, train_dataloader):
         """
-        Fits the ESN using the Ridge regression closed-form solution.
+        Fits ESN with direct method (i.e., no gradient descent).
+        This fit is to be used with the following learning algorithms:
+        ``RidgeRegression``, ``RidgeRegression_skl``, ``LinearSVC``, and
+        ``LogisticRegression_skl``.
 
         Parameters
         ----------
-        train_dataloader: torchtext.data.iterator.Iterator
-            Training dataset.
-
-        Returns
-        -------
-        None
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
         """
 
-        # print("Computing closed-form solution...")
+        print("Computing closed-form solution...")
 
         states_l = []
         labels_l = []
 
         # loop over batches
-        # print("Processing", end="")
-        for i, batch in enumerate(train_dataloader):
-            # print(".", end="")
+        for i, batch in enumerate(tqdm_notebook(train_dataloader)):
 
-            if callable(self.reservoir.embedding):  # HuggingFace
-                batch_text = batch
-                batch_label = batch["labels"].to(self.device)
-                if 'additional_fts' in batch.keys():
-                    additional_fts = batch["additional_fts"].to(self.device)
-                else:
-                    additional_fts = None
-            else:                                   # TorchText
-                batch_text = batch.text
-                batch_label = batch.label
+            batch_text = batch
+            batch_label = batch["labels"].to(self.device)
+            if 'additional_fts' in batch.keys():
+                additional_fts = batch["additional_fts"].to(self.device)
+            else:
+                additional_fts = None
 
-            # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)   # states
+            # forward pass
+            states, lengths = self.layer.forward(batch_text)  # states
 
-            # Do the same as above but with the sentences reversed
+            # forward pass with reversed states
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
+                reversed_states, _ = self.layer.reverse_forward(batch_text)
 
             labels = batch_label
 
-            # if merging_strategy is None: duplicate labels
-            if self.merging_strategy.merging_strategy is None:
+            # if pooling_strategy is None, then duplicate labels
+            if self.pooling_strategy.pooling_strategy is None:
                 labels = mat.duplicate_labels(labels, lengths)
 
-            # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text, 
-                                                      reversed_states, additional_fts)
-
+            # apply pooling
+            final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                        reversed_states, additional_fts)
             states_l.append(final_states)
             labels_l.append(labels)
 
@@ -268,27 +212,27 @@ class EchoStateNetwork(nn.Module):
 
         self.learning_algo.fit(all_states, all_labels)
 
-        # print("\nTraining complete.")
-
-        return None
+        print("\nTraining complete.")
 
     def _fit_GD(self, train_dataloader, epochs=1, iter_steps=100):
         """
-        Fits the ESN using gradient descent.
+        Fits ESN with gradient descent method.
+        This fit is to be used with the following learning algorithms:
+        ``LogisticRegression`` and ``DeepNN``.
 
         Parameters
         ----------
-        train_dataloader: torchtext.data.iterator.Iterator
-            Training dataset.
-        epochs: int
-            Number of epochs.
-        iter_steps: int
-            Number of iteration steps before displaying the loss.
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
+        epochs : `int`
+            Number of training epochs.
+        iter_steps : `int`
+            Number of steps (batches) after which the loss is printed.
 
         Returns
         -------
-        loss_l: list
-            List of losses.
+        loss_l: `list`
+            List of training losses.
         """
 
         print("Performing gradient descent...")
@@ -296,53 +240,46 @@ class EchoStateNetwork(nn.Module):
         loss_l = []
         n_iter = 0
 
-        #  loop over epochs
-        for epoch in range(int(epochs)):
-
-            print("Epoch", epoch, end="")
+        # loop over epochs
+        for epoch in tqdm_notebook(range(int(epochs))):
 
             # loop over batches
-            for i_batch, batch in enumerate(train_dataloader):
-                print(".", end="")
+            for i_batch, batch in enumerate(tqdm_notebook(train_dataloader, leave=False)):
 
-                if callable(self.reservoir.embedding):  # HuggingFace
-                    batch_text = batch
-                    batch_label = batch["labels"].to(self.device)
-                    if 'additional_fts' in batch.keys():
-                        additional_fts = batch["additional_fts"].to(self.device)
-                    else:
-                        additional_fts = None
-                else:                                   # TorchText
-                    batch_text = batch.text
-                    batch_label = batch.label
+                batch_text = batch
+                batch_label = batch["labels"].to(self.device)
+                if 'additional_fts' in batch.keys():
+                    additional_fts = batch["additional_fts"].to(self.device)
+                else:
+                    additional_fts = None
 
-                # Pass the tokens through the reservoir
-                states, lengths = self.reservoir.forward(batch_text, mode=self.mode)  # states
+                # forward pass
+                states, lengths = self.layer.forward(batch_text)  # states
 
-                # Do the same as above but with the sentences reversed
+                # forward pass with reversed states
                 reversed_states = None
                 if self.bidirectional:
-                    reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
+                    reversed_states, _ = self.layer.reverse_forward(batch_text)
 
-                labels = batch_label.type(torch.int64)                  # labels (converted to int for the loss)
-                # if merging_strategy is None: duplicate labels
-                if self.merging_strategy.merging_strategy is None:
+                labels = batch_label.type(torch.int64)  # labels converted to int in this case
+                # if pooling_strategy is None, then duplicate labels
+                if self.pooling_strategy.pooling_strategy is None:
                     labels = mat.duplicate_labels(labels, lengths)
 
-                # apply the correct merging strategy and bi-directionality if needed.
-                final_states = self._apply_merge_strategy(states, lengths, batch_text, 
-                                                          reversed_states, additional_fts)
+                # apply pooling
+                final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                            reversed_states, additional_fts)
 
-                outputs = self.learning_algo(final_states)              # outputs
+                outputs = self.learning_algo(final_states)  # outputs
 
                 if isinstance(self.criterion, torch.nn.MultiLabelSoftMarginLoss) or \
                         isinstance(self.criterion, torch.nn.BCEWithLogitsLoss):
                     labels = torch.nn.functional.one_hot(labels).double()
 
-                loss = self.criterion(outputs, labels)                  # compute loss
-                self.optimizer.zero_grad()                              # reset optimizer gradient
-                loss.backward()                                         # backward pass
-                self.optimizer.step()                                   # gradient update
+                loss = self.criterion(outputs, labels)  # compute loss
+                self.optimizer.zero_grad()  # reset optimizer gradient
+                loss.backward()  # backward pass
+                self.optimizer.step()  # update weights
 
                 n_iter += 1
 
@@ -356,85 +293,83 @@ class EchoStateNetwork(nn.Module):
 
     def fit(self, train_dataloader, epochs=1, iter_steps=100):
         """
-        Fits the ESN on the training set. Fitting is performed according to:
-        1) a learning algorithm;
-        2) a merging strategy.
+        Fits ESN.
+        Calls the correct ``_fit_direct()`` or ``_fit_GD()`` method
+        depending on the learning algorithm.
+        The parameters ``epochs`` and ``iter_steps`` are ignored
+        in the case of a ``_fit_direct``.
 
         Parameters
         ----------
-        train_dataloader : torchtext.data.iterator.Iterator
-            Training dataset.
-        epochs : int
-            Number of traning epochs (only if leaning_algo ≠ RidgeRegression)
-        iter_steps : int
-            Number of traning steps after which loss is recorded (only if leaning_algo ≠ RidgeRegression).
-
-        Returns
-        -------
-        loss_l : None, list
-            None if closed-form solution used.
-            list of losses if gradient descent used.
+        train_dataloader: `torch.utils.data.dataloader.DataLoader`
+            Training dataloader.
+        epochs : `int`
+            Number of training epochs.
+        iter_steps : `int`
+            Number of steps (batches) after which the loss is printed.
         """
 
-        # Closed-form training (for RR, RF)
+        # closed-form training
         if isinstance(self.learning_algo, la.RidgeRegression) or \
-            isinstance(self.learning_algo, la.RidgeRegression2) or \
-            isinstance(self.learning_algo, la.LogisticRegression2) or \
-            isinstance(self.learning_algo, la.LinearSVC):
+                isinstance(self.learning_algo, la.RidgeRegression_skl) or \
+                isinstance(self.learning_algo, la.LogisticRegression_skl) or \
+                isinstance(self.learning_algo, la.LinearSVC):
 
             return self._fit_direct(train_dataloader)
 
-        # Gradient descent training (for LR or deep NN)
-        else:
+        # Gradient descent training
+        elif isinstance(self.learning_algo, la.LogisticRegression) or \
+                isinstance(self.learning_algo, la.DeepNN):
 
             return self._fit_GD(train_dataloader, epochs, iter_steps)
 
     def _compute_predictions(self, states, lengths):
         """
-        Takes reservoir states, passes them to the learning algorithm and computes predictions out of them.
-        Predictions are computed differently depending on whether the merging strategy is None or not.
-        If merging strategy is None, the predictions are computed as follows:
+        Takes states, passes them to the learning algorithm and computes predictions out of them.
+        Predictions are computed differently depending on whether the pooling strategy is None or not.
+        If pooling strategy is None, the predictions are computed as follows:
+
         For each input sentence u:
-        (1) the corresponding reservoir states X_u are passed through the learning algorithm;
-        (2) the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
-        (3) the prediction is arg_max(y_u).
-        If merging strategy is not None, the predictions are computed as follows:
+            - the states X_u are passed through the learning algorithm;
+            - the raw outputs of the algorithm Y_u are then averaged row-wise, yielding a 1-dim tensor y_u;
+            - prediction = arg_max(y_u).
+
+        If pooling strategy is not None, the predictions are computed as follows:
+
         For each input sentence u:
-        (1) the corresponding merged reservoir state x_u is passed through the learning algorithm,
+            - the merged layer state x_u is passed through the learning algorithm;
         yielding a 1-dim tensor y_u;
-        (3) the prediction is the arg_max(y_u).
+            - prediction = arg_max(y_u).
 
         Parameters
         ----------
-        states: torch.Tensor
-            Reservoir states obtained after processing the inputs.
-        lengths: torch.Tensor
-            Lengths of input texts in the batch.
+        states : `torch.Tensor`
+            3D tensor [batch size x max length x reservoir dim]
+            containing the reservoir states.
+        lengths : `torch.Tensor`
+           1D tensor [batch size] containing the lengths of all sentences in the batch.
 
         Returns
         -------
-        predictions: torch.Tensor
+        predictions : `torch.Tensor`
             Predictions computed from the outputs.
         """
 
         raw_outputs = self.learning_algo(states)
 
-        if self.merging_strategy.merging_strategy is None:          # merging strategy is None
-
-            # tmp = list(lengths.numpy())
-            # tmp = [sum(tmp[:i]) - 1 for i in range(1, len(tmp) + 1)]
-            # predictions = outputs[tmp].type(torch.int64)
-            # print("*** raw_outputs ***", raw_outputs.size(), raw_outputs.dtype)
+        # pooling strategy is None
+        if self.pooling_strategy.pooling_strategy is None:
 
             tmp = list(lengths.cpu().numpy())
             tmp = [0] + [sum(tmp[:i]) for i in range(1, len(tmp) + 1)]
-            outputs = torch.stack([torch.mean(raw_outputs[tmp[i]:tmp[i+1]], dim=0) for i in range(len(tmp)-1)])
+            outputs = torch.stack([torch.mean(raw_outputs[tmp[i]:tmp[i + 1]], dim=0) for i in range(len(tmp) - 1)])
             predictions = outputs.argmax(dim=1)
 
-        else:                                                       # merging strategy is not None
-            if raw_outputs.dim() != 1: # the learning algo returns the probas
+        # pooling strategy is not None
+        else:
+            if raw_outputs.dim() != 1:  # the learning algo returns the probs
                 outputs = raw_outputs.argmax(dim=1).float()
-            else:                      # the learning algo returns the classes
+            else:  # the learning algo returns the classes
                 outputs = raw_outputs.float()
             predictions = outputs.type(torch.int64)
 
@@ -442,19 +377,20 @@ class EchoStateNetwork(nn.Module):
 
     def predict(self, dataloader, verbose=True):
         """
-        Evaluates the ESN on a dataset (train or test).
-        Returns the list of prediction labels. If true labels are known, returns the accuracy also.
+        Evaluates the ESN on a dataloader (train, test, validation).
+        Returns the list of prediction labels.
+        If the true labels are known, then returns the accuracy also.
 
         Parameters
         ----------
-        dataloader : torchtext.data.iterator.Iterator
-            Test dataset.
+        dataloader : `torch.utils.data.dataloader.DataLoader`
+            Dataloader.
+        verbose : `bool`
 
         Returns
         -------
-        predictions_l, accuracy : list, float
-            List of prediction labels and accuracy.
-            If true labels are not known, returns None for accuracy.
+        `tuple` [`list`, `float`]
+            (predictions, accuracy): list of predictions and accuracy.
         """
 
         predictions_l = []
@@ -462,46 +398,41 @@ class EchoStateNetwork(nn.Module):
         total = 0
         testing_mode = False
 
-        # print("Processing", end="")
-        for i, batch in enumerate(dataloader):
-            # print(".", end="")
+        for i, batch in enumerate(tqdm_notebook(dataloader)):
 
-            if callable(self.reservoir.embedding):  # HuggingFace
+            if callable(self.layer.embedding):  # HuggingFace # XXX fix because no more else
                 batch_text = batch
                 batch_label = batch["labels"].to(self.device)
                 if 'additional_fts' in batch.keys():
                     additional_fts = batch["additional_fts"].to(self.device)
                 else:
                     additional_fts = None
-            else:                                   # TorchText
-                batch_text = batch.text
-                batch_label = batch.label
 
-            # Pass the tokens through the reservoir
-            states, lengths = self.reservoir.forward(batch_text, mode=self.mode)
+            # forward pass
+            states, lengths = self.layer.forward(batch_text)
 
-            # Do the same as above but with the sentences reversed
+            # forward pass with reversed text
             reversed_states = None
             if self.bidirectional:
-                reversed_states, _ = self.reservoir.reverse_forward(batch_text, mode=self.mode)
+                reversed_states, _ = self.layer.reverse_forward(batch_text)
 
-            # apply the correct merging strategy and bi-directionality if needed.
-            final_states = self._apply_merge_strategy(states, lengths, batch_text, 
-                                                      reversed_states, additional_fts)
+            # apply pooling
+            final_states = self._apply_pooling_strategy(states, lengths, batch_text,
+                                                        reversed_states, additional_fts)
 
             predictions = self._compute_predictions(final_states, lengths)
             predictions_l.append(predictions.reshape(-1))
 
-            # if labels available, compute accuracy
+            # if labels available, then compute accuracy
             try:
                 labels = batch_label.type(torch.int64)
                 total += labels.size(0)
                 correct += (predictions == labels).sum()
                 testing_mode = True
-            # otherwise: pure prediction mode
+            # otherwise, pure prediction mode
             except Exception:
                 pass
-        
+
         accuracy = 100 * correct.item() / float(total) if testing_mode else None
         predictions_l = torch.cat(predictions_l, dim=0).cpu().detach().numpy()
 

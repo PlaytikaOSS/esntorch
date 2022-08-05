@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Echo State Networks for Text Classification &mdash; esntorch 0.0.1 documentation</title>
+  <title>Echo State Networks for Text Classification &mdash; esntorch 1.0.0 documentation</title>
   
 
   
@@ -95,7 +95,8 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ESN.html">Tutorial 1: Echo State Networks for Text Classification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_DeepESN.html">Tutorial 2: Deep Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Architecture</a></li>
 </ul>
 
@@ -254,8 +255,8 @@ training process targeted at this <em>many-to-one</em> paradigm.</p>
 <dt>Our training paradigm consist of the four following steps:</dt><dd><ol class="arabic simple">
 <li><p>Embed the successive texts (FastTest, GloVe, etc.);</p></li>
 <li><p>Pass the embedded texts into the ESN;</p></li>
-<li><p>Merge the reservoir states associated to the successive texts (last, mean, etc.);</p></li>
-<li><p>Learn the association between the merged states and associated targets.</p></li>
+<li><p>Pool the reservoir states associated to the successive texts (last, mean, etc.);</p></li>
+<li><p>Learn the association between the polled states and associated targets.</p></li>
 </ol>
 </dd>
 </dl>
