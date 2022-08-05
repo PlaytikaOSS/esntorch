@@ -1,0 +1,8 @@
+datasets==1.7.0
+numpy==1.22.3
+pytest==6.2.4
+scikit_learn==1.1.1
+setuptools==57.4.0
+torch==1.7.1+cu110
+tqdm==4.49.0
+transformers==4.8.2
