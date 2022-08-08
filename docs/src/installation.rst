@@ -57,11 +57,13 @@ To create the HTML documentation run the following commands:
     $ make html
 
 
-To create the python wheel file ``pyabtest.whl`` for installation with ``pip``, run the following command:
+
+To make the library pip instalable, create and ``.whl`` file and deploy it on [PyPi](https://pypi.org/project/esntorch/). Make sure that ``twine`` is installed and run the following commands:
 
 .. code::
 
     # python setup.py sdist bdist_wheel
+    # twine upload -r pypi dist/*
 
 
 

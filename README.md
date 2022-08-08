@@ -1,4 +1,4 @@
-# EsnTorch (version 1.0.1)
+# EsnTorch (version 1.0.5)
 **Echo state networks (ESNs) for natural language processing (NLP).**
 
 ``EsnTorch`` is a user-friendly python library designed for the implementation of **echo state networks (ESNs)**
@@ -63,11 +63,12 @@ $ make clean
 $ make html
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create the python wheel file ``pyabtest.whl`` for installation with ``pip``, run the following command:
+To make the library pip instalable, create and `.whl` file and deploy it on [PyPi](https://pypi.org/project/esntorch/). Make sure that `twine` is installed and run the following commands:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$ python setup.py sdist bdist_wheel
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$ python setup.py bdist_wheel
+$ twine upload -r pypi dist/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 License
