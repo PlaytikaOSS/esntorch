@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation &mdash; esntorch 1.0.0 documentation</title>
+  <title>Installation &mdash; esntorch 1.0.5 documentation</title>
   
 
   
@@ -40,7 +40,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorial 1: Echo State Networks for Text Classification" href="tutorial_ESN.html" />
+    <link rel="next" title="Tutorial 2: Deep Echo State Networks for Text Classification" href="tutorial_DeepESN.html" />
     <link rel="prev" title="Echo State Networks for Text Classification" href="esn_description.html" /> 
 </head>
 
@@ -95,7 +95,6 @@
 <li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial_ESN.html">Tutorial 1: Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_DeepESN.html">Tutorial 2: Deep Echo State Networks for Text Classification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Architecture</a></li>
 </ul>
@@ -191,8 +190,11 @@
 <span id="id1"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <section id="id2">
 <h2>Installation<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
-<p>This library is distributed on [PyPi](<a class="reference external" href="https://pypi.org/project/esntorch/">https://pypi.org/project/esntorch/</a>) and
-can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, as shown below:</p>
+<div class="line-block">
+<div class="line">This library is distributed on PyPi:</div>
+<div class="line"><a class="reference external" href="https://pypi.org/project/esntorch/">https://pypi.org/project/esntorch/</a></div>
+<div class="line">and can be installed with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, as shown below:</div>
+</div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pip install esntorch
 </pre></div>
 </div>
@@ -202,8 +204,11 @@ together with the library itself.</p>
 </section>
 <section id="github">
 <h2>GitHub<a class="headerlink" href="#github" title="Permalink to this headline">¶</a></h2>
-<p>The source code of the library is available on [GitHub](<a class="reference external" href="https://github.com/PlaytikaResearch/EsnTorch">https://github.com/PlaytikaResearch/EsnTorch</a>).
-It can be cloned with the following command:</p>
+<div class="line-block">
+<div class="line">The source code of the library is available on GitHub:</div>
+<div class="line"><a class="reference external" href="https://github.com/PlaytikaResearch/EsnTorch">https://github.com/PlaytikaResearch/EsnTorch</a></div>
+<div class="line">It can be cloned with the following command:</div>
+</div>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/PlaytikaResearch/EsnTorch.git
 </pre></div>
 </div>
@@ -223,8 +228,13 @@ $ make clean
 $ make html
 </pre></div>
 </div>
-<p>To create the python wheel file <code class="docutils literal notranslate"><span class="pre">pyabtest.whl</span></code> for installation with <code class="docutils literal notranslate"><span class="pre">pip</span></code>, run the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># python setup.py sdist bdist_wheel</span>
+<div class="line-block">
+<div class="line">To make the library pip instalable, create and <code class="docutils literal notranslate"><span class="pre">.whl</span></code> file and deploy it on PyPi:</div>
+<div class="line"><a class="reference external" href="https://pypi.org/project/esntorch/">https://pypi.org/project/esntorch/</a></div>
+<div class="line">Make sure that <code class="docutils literal notranslate"><span class="pre">twine</span></code> is installed and run the following commands:</div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python setup.py sdist bdist_wheel
+$ twine upload -r pypi dist/*
 </pre></div>
 </div>
 </section>
@@ -242,7 +252,7 @@ $ make html
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial_ESN.html" class="btn btn-neutral float-right" title="Tutorial 1: Echo State Networks for Text Classification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial_DeepESN.html" class="btn btn-neutral float-right" title="Tutorial 2: Deep Echo State Networks for Text Classification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="esn_description.html" class="btn btn-neutral float-left" title="Echo State Networks for Text Classification" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

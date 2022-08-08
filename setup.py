@@ -1,8 +1,6 @@
 import setuptools
 import os
 
-print("XXX", os.getcwd())
-
 __version__ = "1.0.5"
 
 with open("requirements.txt") as f:
@@ -29,4 +27,3 @@ setuptools.setup(
     install_requires=requirements,
     python_requires='>=3.7',
 )
-    

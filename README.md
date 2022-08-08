@@ -63,7 +63,8 @@ $ make clean
 $ make html
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To make the library pip instalable, create and `.whl` file and deploy it on [PyPi](https://pypi.org/project/esntorch/). Make sure that `twine` is installed and run the following commands:
+To make the library pip instalable, create and `.whl` file and deploy it on [PyPi](https://pypi.org/project/esntorch/). 
+Make sure that `twine` is installed and run the following commands:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $ python setup.py bdist_wheel

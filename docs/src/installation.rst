@@ -10,8 +10,9 @@ Installation
 Installation
 ------------
 
-This library is distributed on [PyPi](https://pypi.org/project/esntorch/) and
-can be installed with ``pip``, as shown below:
+| This library is distributed on PyPi:
+| https://pypi.org/project/esntorch/
+| and can be installed with ``pip``, as shown below:
 
 .. code::
 
@@ -26,8 +27,9 @@ Please visit the [installation page](docs/src/installation.rst) for more details
 GitHub
 ------
 
-The source code of the library is available on [GitHub](https://github.com/PlaytikaResearch/EsnTorch).
-It can be cloned with the following command:
+| The source code of the library is available on GitHub:
+| https://github.com/PlaytikaResearch/EsnTorch
+| It can be cloned with the following command:
 
 .. code::
 
@@ -58,12 +60,14 @@ To create the HTML documentation run the following commands:
 
 
 
-To make the library pip instalable, create and ``.whl`` file and deploy it on [PyPi](https://pypi.org/project/esntorch/). Make sure that ``twine`` is installed and run the following commands:
+| To make the library pip instalable, create and ``.whl`` file and deploy it on PyPi:
+| https://pypi.org/project/esntorch/
+| Make sure that ``twine`` is installed and run the following commands:
 
 .. code::
 
-    # python setup.py sdist bdist_wheel
-    # twine upload -r pypi dist/*
+    $ python setup.py sdist bdist_wheel
+    $ twine upload -r pypi dist/*
 
 
 
