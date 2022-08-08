@@ -1,4 +1,6 @@
 *.DS_Store
 *.pyc
 *.ipynb_checkpoints
+*.pytest_cache
+*.idea
 examples/cache_dir/

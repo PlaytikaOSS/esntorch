@@ -20,8 +20,6 @@
 
 import torch
 from torch.autograd import Variable
-
-
 # from src.utils.matrix import crazysoftmax
 
 
