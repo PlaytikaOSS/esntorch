@@ -1,6 +1,6 @@
 import setuptools
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="esntorch",
-    version="1.0.0",
+    version="1.0.1",
     description="Python library: Echo state Networks for NLP",
     long_description=long_description,
     long_description_content_type="text/markdown",
