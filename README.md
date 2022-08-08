@@ -1,4 +1,4 @@
-# EsnTorch (version 1.0.5)
+# EsnTorch (version 1.0.6)
 **Echo state networks (ESNs) for natural language processing (NLP).**
 
 ``EsnTorch`` is a user-friendly python library designed for the implementation of **echo state networks (ESNs)**
